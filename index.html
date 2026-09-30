@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MACHIDACIAGA（マチダシアガ）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="cab" id="cab">
+  <header class="topper" id="topper">
+    <div class="bulbs" id="bulbs" aria-hidden="true"></div>
+    <h1 class="title">MACHIDACIAGA</h1>
+    <p class="sub">マチダシアガ</p>
+  </header>
+
+  <div class="screenbox"><canvas id="screen" aria-label="演出用の液晶画面"></canvas><button class="lcdskip" id="skipBtn" hidden>SKIP ▶▶</button></div>
+
+  <div class="bezel">
+    <div class="window">
+      <div class="reels" id="reels">
+        <div class="reel"><div class="strip"></div></div>
+        <div class="reel"><div class="strip"></div></div>
+        <div class="reel"><div class="strip"></div></div>
+        <svg class="lines" id="lines" viewBox="0 0 300 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+    </div>
+  </div>
+  <div class="stops">
+    <button class="stop" data-i="0" aria-label="左リールを止める">STOP</button>
+    <button class="stop" data-i="1" aria-label="中リールを止める">STOP</button>
+    <button class="stop" data-i="2" aria-label="右リールを止める">STOP</button>
+  </div>
+
+  <div class="lcds">
+    <div class="lcd"><span>クレジット</span><b id="credit">0</b></div>
+    <div class="lcd"><span>払い出し</span><b id="payout">0</b></div>
+    <div class="lcd"><span>ゲーム数</span><b id="games">0</b></div>
+  </div>
+  <div class="msg" id="msg" aria-live="polite">制御テーブルを準備中…</div>
+
+  <div class="ctrl">
+    <div class="peka" id="peka" aria-live="polite" aria-label="当選ランプ 消灯">
+      <svg viewBox="0 0 60 60" aria-hidden="true"><path class="star" d="M30 4l7.6 16.2 17.7 2.2-13 12.2 3.3 17.5L30 43.4 14.4 52.1l3.3-17.5-13-12.2 17.7-2.2z"/></svg>
+      <span class="word">LUCKY!</span>
+    </div>
+    <button class="auto" id="autoBtn" aria-pressed="false">AUTO</button>
+    <button class="spin" id="lever" disabled>SPIN</button>
+  </div>
+
+  <div class="debug" id="debug" hidden>
+    内部抽選：<b id="dFlag">-</b>　持ち越し：<b id="dCarry">なし</b><br>
+    液晶演出：<b id="dScn">-</b>（7・BAR期待度 <b id="dExp">-</b>）<br>
+    ランプ：<b id="dPeka">-</b>　出玉率：<b id="rtp">-</b><br>
+    激アツ：<b id="dGeki">-</b><br>
+    カットイン：<b id="dCut">-</b><br>
+    擬似連：<b id="dGisi">-</b>
+    <div class="dbgctl">
+      <label>内部抽選<select id="fFlag">
+        <option value="auto">自動</option><option value="none">ハズレ</option><option value="RPL">リプレイ</option>
+        <option value="GRP">ぶどう</option><option value="BEL">ベル</option><option value="CHE">チェリー</option><option value="WML">スイカ</option>
+        <option value="BAR">BAR</option><option value="S7">7</option>
+</select></label>
+      <label>液晶演出<select id="fScene"><option value="auto">自動</option></select></label>
+      <label>ランプ（7・BAR当選時）<select id="fPeka">
+        <option value="auto">自動</option><option value="pre">先ペカ</option><option value="post">後ペカ</option></select></label>
+      <label>激アツ演出<select id="fGeki">
+        <option value="auto">自動</option><option value="on">必ず発生</option><option value="off">発生しない</option></select></label>
+      <label>カットイン<select id="fCut">
+        <option value="auto">自動</option><option value="none">なし</option><option value="green">緑（ねぇええええ）</option>
+        <option value="red">赤（燃やすよぉ）</option><option value="rainbow">虹（アルマンド）</option></select></label>
+      <label>擬似連<select id="fGisi">
+        <option value="auto">自動</option><option value="0">なし</option><option value="1">①追いハート</option><option value="2">②追い花火</option>
+        <option value="3">③追い魔法のお城</option><option value="4">④追い馬車</option><option value="5">⑤追いメガポコナイト</option></select></label>
+      <label>目押し<select id="fAim">
+        <option value="off">アシストなし</option><option value="flag">当選役を狙う</option><option value="seven">7を狙う</option></select></label>
+    </div>
+    <div class="dbgbtns"><button class="small" id="atS7">AT突入（7）</button><button class="small" id="atBAR">AT突入（BAR）</button><button class="small" id="atEnd">AT終了</button><button class="small" id="gekiPrev">激アツを見る</button><button class="small" id="cutPrev">カットインを見る</button></div>
+    <div class="dbgnote">この欄を開いている間だけ有効。「7を狙う」でハズレ時に押すと、テンパイからの蹴飛ばし（ガセ煽り）が見られます。</div>
+    <div class="slides"><span id="dS0">-</span><span id="dS1">-</span><span id="dS2">-</span></div>
+  </div>
+
+  <div class="opts">
+    <label>設定<select id="setting">
+      <option value="1">設定1（80%）</option><option value="2">設定2（90%）</option><option value="3">設定3（105%）</option>
+      <option value="4">設定4（120%）</option><option value="5">設定5（150%）</option><option value="6">設定6（200%）</option>
+    </select></label>
+    <button class="small" id="bgmBtn">BGM：オン</button>
+  </div>
+  <div class="foot">
+    <button class="small" id="dbgBtn" aria-pressed="false">内部を見る</button>
+    <button class="small" id="sound">音：オン</button>
+    <button class="small" id="reset">リセット</button>
+  </div>
+</div>
+
+<details>
+  <summary>配当表と仕組み</summary>
+  <table id="paytable"></table>
+  <p class="note">レバーを押した瞬間に役が抽選され（内部抽選）、リールはその結果に従って最大4コマ滑って止まります。当選役は揃えに行き、当選していない役は絶対に揃えません。</p>
+  <p class="note">3枚掛け・3ライン（上段・中段・下段）固定。リール配列はジャグラーの配列をもとにしています（ピエロの位置はスイカ）。ぶどうとリプレイはどの押し順・タイミングでも必ず揃います。チェリー・ベル・スイカ・7・BARは狙って押す必要があります。</p>
+  <p class="note">設定1〜6で7・BARの確率が変わり、理論出玉率は80%〜200%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
+  <p class="note">大当たり確定時は液晶に「777を狙え！！」などの告知が出ます。レバー後に擬似連（①追いハート→②追い花火→③追い魔法のお城→④追い馬車→⑤追いメガポコナイト）が続くほどチャンス。擬似連ではおじいちゃんが「おーーい！」と登場し、段が進むごとに大きくなります。リール回転開始時のカットインは緑「ねぇええええ」＜赤「燃やすよぉ〜」＜虹「アルマンド〜」（虹は確定）。ボーナス中はドレスのキャラが登場します。AT中は液晶右下のSKIPで残りを消化できます。</p>
+  <p class="note">通常ステージは配信主がBGMに合わせて揺れる配信画面。AT・テンパイ・激アツではカピバラの「かぴすけ」が登場します。ハート連打・金ハート連打・ギフト（青→緑→赤→虹）・ランキング急上昇の順に期待度が高く、第2停止で画面全体が覆われる「激アツ」が出ればかなりのチャンス。</p>
+  <p class="note">AUTOボタンでオートプレイ。ランプが点灯すると自動で止まるので、7かBARを狙って押してください。AT中もそのまま自動で消化します。</p>
+  <p class="note">7かBARが揃うとAT（アシストタイム）に突入。7は300枚、BARは100枚の払い出しまで続きます。AT中はぶどうが高確率で当選し、どの順番で押しても揃います。SPINボタンの連打でもリールを左から止められます。</p>
+  <p class="note">LUCKY!ランプが光ったら7かBARの当選確定。レバーを押した瞬間に光る「先ペカ」と、3つ目のSTOPを押した瞬間に光る「後ペカ」があります。光ったら揃うまで持ち越すので、4コマ以内に入るよう狙って押しましょう。</p>
+  <p class="note">液晶の演出は内部抽選の結果で変わります。流れ星より金の流れ星、宝箱は青→緑→赤の順に期待度アップ、虹の宝箱は確定。北斗七星が完成すれば大当たりです。</p>
+  <p class="keys">キーボード：スペース＝SPIN、1・2・3＝各リール停止</p>
+</details>
+
+<section class="mapbox">
+  <h2>リール配列</h2>
+  <p>黄色が現在窓に見えている図柄、赤枠が中段です。</p>
+  <table class="reelmap" id="reelmap"></table>
+</section>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+<canvas id="gekiatsu" aria-hidden="true" hidden></canvas>
+<div class="bigwin" id="bigwin" hidden>
+  <div class="bw-text" id="bwText">JACKPOT!!</div>
+  <div class="bw-amount" id="bwAmount">+0</div>
+  <div class="bw-tap">タップで閉じる</div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
