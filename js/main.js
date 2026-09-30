@@ -1975,6 +1975,10 @@
   const syncSound = () => soundBtn.textContent = state.sound ? '音：オン' : '音：オフ';
   soundBtn.addEventListener('click', () => { state.sound = !state.sound; store.set('slot.sound', state.sound); syncSound(); });
   const dbgBtn = $('dbgBtn');
+  // GitHub Pages（*.github.io）では「内部を見る」を非表示。URLに ?debug を付けたときだけ表示する
+  if(/\.github\.io$/.test(location.hostname) && !new URLSearchParams(location.search).has('debug')){
+    dbgBtn.hidden = true; dbgBtn.style.display = 'none'; $('debug').hidden = true;
+  }
   dbgBtn.addEventListener('click', () => {
     const show = $('debug').hidden;
     $('debug').hidden = !show;
