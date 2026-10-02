@@ -75,7 +75,9 @@
   const NAVI = {}; // 押し順ナビは廃止
   const CARRY_OVER = ['S7','BAR']; // 取りこぼすと持ち越す役
   const MAX_SLIDE = 4;             // 最大すべりコマ数
-  const SPEED = 0.018;             // 回転速度（コマ/ms）
+  // 回転速度（コマ/ms）。設定欄で切り替え可能
+  const REEL_SPEEDS = {slow:{v:.011, name:'ゆっくり'}, normal:{v:.018, name:'ふつう'}, fast:{v:.027, name:'はやい'}};
+  let SPEED = REEL_SPEEDS.normal.v;
 
   const mod = (a, n) => ((a % n) + n) % n;
   // リールreelの停止位置posで、row行目に見えている図柄
@@ -299,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030311', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030311', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030311', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030316', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030316', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030316', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -565,7 +567,8 @@
     phase: 'idle', startTs: 0, lastTs: 0,
     sound: store.get('slot.sound', true),
     bgm: store.get('slot.bgm', true),
-    setting: store.get('slot.setting', 6)   // 初期値は設定6
+    setting: store.get('slot.setting', 6),   // 初期値は設定6
+    reelSpeed: store.get('slot.reelSpeed', 'normal')
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
@@ -759,33 +762,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030311';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030316';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030311';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030316';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030311';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030316';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030311';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030316';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030311';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030316';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030311';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030316';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030311';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030316';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030311';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030316';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030311';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030316';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2370,7 +2373,8 @@
     finishCount(); hideBigWin();
     const cost = state.replay ? 0 : BET;
     if(state.credits < cost){
-      setMsg('クレジットがありません。リセットで100枚に戻せます');
+      setMsg('メダルが足りません。チャージしてください');
+      showCharge(true);
       sfx.miss();
       return;
     }
@@ -2454,6 +2458,7 @@
     reels.forEach(r => { r.spinning = true; r.stopping = false; r.stopPos = null; r.slide = null; });
     state.phase = 'spinning';
     updateMap();
+    applyReelSpeed();
     state.startTs = state.lastTs = performance.now();
     setMsg(state.at ? ''
       : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : state.cz ? `チャンスステージ 残り${state.cz.left}G` : 'STOPで止めよう');
@@ -2635,6 +2640,8 @@
     if(bigHit && state.cz) endCZ(true);
     state.dupBig = null;
     save(); updateUI();
+    // メダルが尽きたら、払い出しのカウントが終わったころにチャージの案内
+    setTimeout(() => { if(needCharge() && !countTimer) showCharge(true); }, 1500);
   }
 
   // チャンスステージ
@@ -2691,7 +2698,7 @@
     if(state.peka && !state.at){ setAuto(false); setMsg('ランプ点灯！ オートを止めました。液晶の図柄を狙おう'); return; }
     if(state.phase === 'idle'){
       if(now - lastFinish < (countTimer ? 1200 : 700)) return;
-      if(state.credits < BET && !state.replay){ setAuto(false); setMsg('クレジットがなくなったのでオートを止めました'); return; }
+      if(state.credits < BET && !state.replay){ setAuto(false); setMsg('メダルがなくなったのでオートを止めました'); showCharge(true); return; }
       pull(); lastAct = now;
     } else if(now - lastAct > (state.tenpai ? 1800 : 380)){
       stopNext();
@@ -2735,7 +2742,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610030311';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610030316';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -2757,6 +2764,32 @@
     });
     $('updateClose').addEventListener('click', () => { dismissed = latest; $('updateBar').hidden = true; });
   })();
+
+  // リール速度の切り替え（回転中は次のゲームから反映）
+  const applyReelSpeed = () => { SPEED = (REEL_SPEEDS[state.reelSpeed] || REEL_SPEEDS.normal).v; };
+  $('reelSpeed').value = REEL_SPEEDS[state.reelSpeed] ? state.reelSpeed : 'normal';
+  applyReelSpeed();
+  $('reelSpeed').addEventListener('change', e => {
+    state.reelSpeed = e.target.value; store.set('slot.reelSpeed', state.reelSpeed);
+    if(state.phase !== 'spinning') applyReelSpeed();
+    setMsg(`リールの速さ：${REEL_SPEEDS[state.reelSpeed].name}`);
+  });
+
+  // ================================================================
+  // メダルのチャージ：足りなくなったら案内を出し、ボタンで100枚追加
+  // （ゲーム数や出玉率などの記録はそのまま）
+  // ================================================================
+  const CHARGE = 100;
+  function needCharge(){ return state.credits < BET && !state.replay && state.phase !== 'spinning'; }
+  function showCharge(on){ $('chargeBar').hidden = !on; if(on) sfx.miss(); }
+  $('chargeBtn').addEventListener('click', () => {
+    audio.init();
+    state.credits += CHARGE; state.charged = (state.charged || 0) + CHARGE;
+    showCharge(false); sfx.coin();
+    setMsg(`メダルを${CHARGE}枚チャージしました`);
+    save(); updateUI();
+  });
+  $('chargeClose').addEventListener('click', () => showCharge(false));
 
   // ステージ切り替えボタン：押すたびに 1→2→3→4→1 と切り替え（強制移行までのゲーム数も数え直す）
   const STAGE_NAMES = {1:'配信部屋', 2:'ゲーム部屋', 3:'バーラウンジ', 4:'実家'};

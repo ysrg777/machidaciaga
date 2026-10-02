@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610030311">
+<link rel="stylesheet" href="css/style.css?ver=202610030316">
 </head>
 <body>
 <div class="cab" id="cab">
@@ -107,6 +107,9 @@
       <option value="1">設定1（80%）</option><option value="2">設定2（90%）</option><option value="3">設定3（105%）</option>
       <option value="4">設定4（120%）</option><option value="5">設定5（150%）</option><option value="6">設定6（200%）</option>
     </select></label>
+    <label>リール<select id="reelSpeed">
+      <option value="slow">ゆっくり</option><option value="normal">ふつう</option><option value="fast">はやい</option>
+    </select></label>
     <div class="optbtns">
       <button class="small" id="stageSw">STAGE ▶</button>
       <button class="small" id="bgmBtn">BGM：オン</button>
@@ -148,6 +151,12 @@
 <canvas id="gekiatsu" aria-hidden="true" hidden></canvas>
 <canvas id="bonusIn" aria-hidden="true" hidden></canvas>
 <canvas id="kakutei" aria-hidden="true" hidden></canvas>
+<div class="charge" id="chargeBar" role="alertdialog" aria-label="メダルのチャージ" hidden>
+  <div class="charge-msg">🪙 メダルがなくなりました</div>
+  <div class="charge-sub">チャージすると続けて遊べます</div>
+  <button id="chargeBtn">100枚チャージする</button>
+  <button class="charge-x" id="chargeClose">あとで</button>
+</div>
 <div class="update" id="updateBar" role="status" hidden>
   <span>🆕 新しいバージョンがあります</span>
   <button id="updateBtn">リロード</button>
@@ -159,6 +168,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610030311"></script>
+<script src="js/main.js?ver=202610030316"></script>
 </body>
 </html>
