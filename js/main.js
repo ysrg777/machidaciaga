@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030350', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030350', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030350', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030401', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030401', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030401', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -764,33 +764,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030350';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030401';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030350';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030401';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030350';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030401';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030350';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030401';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030350';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030401';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030350';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030401';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030350';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030401';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030350';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030401';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030350';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030401';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2679,12 +2679,15 @@
   function enterCZ(){
     if(state.at || state.cz || state.phase === 'spinning') return;
     state.cz = {left:CZ_GAMES, played:0, set:1, cont:null};
+    net.send('czin');
     screen.setCZ(state.cz); screen.czStart(); sfx.czIn();
     setMsg(`チャンスステージ突入！ ${CZ_GAMES}ゲーム`);
     save(); updateUI();
   }
   function endCZ(win, reason = ''){
+    const played = state.cz ? state.cz.played || 0 : 0;
     state.cz = null; screen.setCZ(null);
+    if(!win) net.send('czend', played);   // 大当たりで終わったときは「大当たり」のお知らせだけ
     if(!win){ screen.czEnd(); sfx.czEnd(); setTimeout(() => { if(!state.at && state.phase !== 'spinning') setMsg(`チャンスステージ終了${reason}`); }, 300); }
   }
   // チャンスステージを1ゲーム進める。残り5Gで継続を抽選し、最終ゲームで結果を出す
@@ -2701,6 +2704,7 @@
       if(cz.cont){
         cz.left = CZ_GAMES; cz.cont = null; cz.set = (cz.set || 1) + 1;
         screen.setCZ(cz); screen.czResult(true); sfx.czCont();
+        net.send('czcont', cz.set);
         setMsg(`チャンスステージ継続！ +${CZ_GAMES}G（${cz.set}セット目）`);
       } else {
         endCZ(false, cz.played >= CZ_MAX ? `（${CZ_MAX}G到達）` : '');
@@ -2788,7 +2792,10 @@
     big:     (n, d) => `🎉 ${n}さんが${d === 'S7' ? '777' : 'BAR'}で大当たり！`,
     broke:   (n)    => `💸 ${n}さんのメダルがなくなりました…`,
     k1000:   (n)    => `🪙 ${n}さんのメダルが1000枚を突破！`,
-    premier: (n, d) => `🌈 ${n}さんがプレミア演出${d ? `「${d}」` : ''}を引いた！`
+    premier: (n, d) => `🌈 ${n}さんがプレミア演出${d ? `「${d}」` : ''}を引いた！`,
+    czin:    (n)    => `✨ ${n}さんがチャンスステージに突入！`,
+    czcont:  (n, d) => `🔥 ${n}さんのチャンスステージが継続！${d ? `（${d}セット目）` : ''}`,
+    czend:   (n, d) => `🌙 ${n}さんのチャンスステージが終了…${d ? `（${d}G）` : ''}`
   };
   const net = (() => {
     let db = null, uid = null, fb = null, joinedAt = Date.now(), lastSend = {};
@@ -2828,7 +2835,7 @@
       fb.push(fb.ref(db, 'events'), {uid, name: state.name, type, detail: String(detail).slice(0, 30), t: fb.serverTimestamp()}).catch(() => {});
     }
     function rename(){ if(db && uid) fb.update(fb.ref(db, `presence/${uid}`), {name: state.name}).catch(() => {}); }
-    return {init, send, rename, test: (type = 'big') => receive({name:'テスト', type, detail:'S7'})};
+    return {init, send, rename, test: (type = 'big') => receive({name:'テスト', type, detail: type === 'big' ? 'S7' : type === 'czcont' ? '2' : type === 'czend' ? '40' : ''})};
   })();
   // 名前に使えない文字を取り除いて、長さを制限する
   function cleanName(v){ return String(v || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12) || '名無し'; }
@@ -2869,7 +2876,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610030350';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610030401';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -3021,7 +3028,7 @@
   let forceStage = false;
   $('stageBtn').addEventListener('click', () => { forceStage = true; setMsg('次のゲームでステージが変わります'); });
   $('gekiPrev').addEventListener('click', () => { audio.init(); geki.start(); });
-  $('netTest').addEventListener('click', () => { audio.init(); net.test(pick(['big','broke','k1000','premier'])); });
+  $('netTest').addEventListener('click', () => { audio.init(); net.test(pick(Object.keys(EVENT_TEXT))); });
   $('cutPrev').addEventListener('click', () => { audio.init(); const c = $('fCut').value; const type = ['green','red','rainbow'].includes(c) ? c : 'rainbow'; screen.cutin(type); sfx.cutin(type); });
   $('atBAR').addEventListener('click', () => debugAT('BAR'));
   $('atEnd').addEventListener('click', () => { if(state.at && state.phase !== 'spinning'){ endAT(); save(); updateUI(); } });
