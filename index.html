@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610030051">
+<link rel="stylesheet" href="css/style.css?ver=202610030235">
 </head>
 <body>
 <div class="cab" id="cab">
@@ -106,7 +106,10 @@
       <option value="1">設定1（80%）</option><option value="2">設定2（90%）</option><option value="3">設定3（105%）</option>
       <option value="4">設定4（120%）</option><option value="5">設定5（150%）</option><option value="6">設定6（200%）</option>
     </select></label>
-    <button class="small" id="bgmBtn">BGM：オン</button>
+    <div class="optbtns">
+      <button class="small" id="stageSw">STAGE ▶</button>
+      <button class="small" id="bgmBtn">BGM：オン</button>
+    </div>
   </div>
   <div class="foot">
     <button class="small" id="dbgBtn" aria-pressed="false">内部を見る</button>
@@ -123,7 +126,7 @@
   <p class="note">設定1〜6で7・BARの確率が変わり、理論出玉率は80%〜200%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
   <p class="note">小役のアツさ：小役に当選すると、さらに7・BARの抽選が行われます（リプレイ0.1%・ぶどう0.5%・ベル1%・スイカ5%・角チェリー10%・中段チェリー50%）。当選したらランプが光り、次のゲームで狙います。</p>
   <p class="note">チャンスステージ：小役で7・BARの抽選に外れたとき、リプレイ1%・ぶどう1%・ベル5%・スイカ10%・チェリー30%で移行。初回20ゲームで、7・BARの確率が4倍。残り5ゲームから継続ジャッジの煽りが入り、50%で20ゲーム継続（最大100ゲーム）。</p>
-  <p class="note">通常ステージは3種類。アツいときほどステージチェンジが起きやすく、7・BAR当選時はステージ3に移りやすくなります。キャラのポーズに合わせて炎・音符・泡などの演出が出ます。</p>
+  <p class="note">通常ステージは4種類（配信部屋・ゲーム部屋・バーラウンジ・実家）。アツいときほどステージチェンジが起きやすく、7・BAR当選時はステージ3に移りやすくなります。キャラのポーズに合わせて炎・音符・泡などの演出が出ます。</p>
   <p class="note">大当たり確定時は液晶に「777を狙え！！」などの告知が出ます。レバー後に擬似連（①追いハート→②追い花火→③追い魔法のお城→④追い馬車→⑤追いメガポコナイト）が続くほどチャンス。擬似連ではおじいちゃんが「おーーい！」と登場し、段が進むごとに大きくなります。リール回転開始時のカットインは緑「ねぇええええ」＜赤「燃やすよぉ〜」＜虹「アルマンド〜」（虹は確定）。ボーナス中はドレスのキャラが登場します。AT中は液晶右下のSKIPで残りを消化できます。</p>
   <p class="note">通常ステージは配信主がBGMに合わせて揺れる配信画面。AT・テンパイ・激アツではカピバラの「かぴすけ」が登場します。ハート連打・金ハート連打・ギフト（青→緑→赤→虹）・ランキング急上昇の順に期待度が高く、第2停止で画面全体が覆われる「激アツ」が出ればかなりのチャンス。</p>
   <p class="note">AUTOボタンでオートプレイ。ランプが点灯すると自動で止まるので、7かBARを狙って押してください。AT中もそのまま自動で消化します。</p>
@@ -149,6 +152,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610030051"></script>
+<script src="js/main.js?ver=202610030235"></script>
 </body>
 </html>

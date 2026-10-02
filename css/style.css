@@ -16,6 +16,10 @@
 }
 :root[data-theme="dark"]{ --velvet:#5A0A1A; --velvet-deep:#120105; }
 *,*::before,*::after{box-sizing:inherit}
+/* タブレット・スマホでダブルタップ（SPIN連打など）による拡大を防ぐ。ピンチでの拡大は残す */
+html,body,button,select,canvas,.cab{touch-action:manipulation}
+/* 長押しで文字選択やメニューが出ないように */
+.cab,.stop,.spin,.auto,.small,.lcdskip,#screen{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);
   background:var(--velvet-deep) radial-gradient(ellipse at 50% -10%,var(--velvet),var(--velvet-deep) 75%) fixed;
@@ -163,7 +167,9 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 .lcdskip.queued{background:rgba(255,62,165,.8)}
 .window.gshake{animation:gshake .12s 3}
 @keyframes gshake{25%{transform:translate(-3px,1px)}75%{transform:translate(3px,-1px)}}
-.opts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+.opts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;flex-wrap:wrap}
+.small:disabled{opacity:.4;cursor:default}
+.optbtns{display:flex;gap:6px}
 .opts label{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted)}
 .opts select{font:500 .8rem var(--sans);background:#2A0610;color:var(--ink);border:1px solid #6A4A1A;border-radius:6px;padding:5px}
 .note{font-size:.8rem;color:var(--muted);line-height:1.8}

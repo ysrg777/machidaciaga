@@ -299,9 +299,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030051', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030051', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030051', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030235', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030235', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030235', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -757,30 +757,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030051';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030235';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030051';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030235';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030051';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030235';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030051';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030235';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030051';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030235';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030051';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030235';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030051';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030235';
+  // 実家ステージ（ステージ4）の背景
+  const JIKKA_BG = new Image();
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030235';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030051';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030235';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1291,7 +1294,8 @@
     const STAGE_POSES = {
       1:{sheet:'A', idle:[0,1,3,13], hype:[1,3], happy:[2,9,13], sad:[10], love:[11]},
       2:{sheet:'A', idle:[5,7,8,12,6], hype:[4,14], happy:[15,6], sad:[7,12], love:[15]},
-      3:{sheet:'B', idle:[0,4,6,8,9,13], hype:[5,15,1], happy:[2,3,12,10], sad:[8,7], love:[11,14]}
+      3:{sheet:'B', idle:[0,4,6,8,9,13], hype:[5,15,1], happy:[2,3,12,10], sad:[8,7], love:[11,14]},
+      4:{sheet:'A', idle:[0,1,3,5,7,8,13,6], hype:[4,14,9], happy:[2,9,13,15,6], sad:[10,12], love:[11]}   // 実家もコウジ（ポーズ集Aを全部使う）
     };
     // ポーズごとの演出の種類
     const POSE_FX = {
@@ -1401,7 +1405,18 @@
       g.fillStyle = '#2a1206'; g.fillRect(0, DESK, W, H - DESK);
       g.fillStyle = '#8a5a2a'; g.fillRect(0, DESK, W, 3);
     }
-    function drawStageBg(t){ if(S.stg === 2) drawGameRoom(t); else if(S.stg === 3) drawLounge(t); else drawRoom(t); }
+    // ステージ4：実家（和室）。障子越しの光がゆっくり揺れ、ろうそくの火がまたたく
+    function drawJikka(t){
+      if(JIKKA_BG.complete && JIKKA_BG.naturalWidth) g.drawImage(JIKKA_BG, 0, 0, W, H);
+      else { g.fillStyle = '#7a5a2a'; g.fillRect(0,0,W,H); }
+      g.save();
+      g.globalAlpha = .08 + .05*Math.sin(t/1700); g.fillStyle = '#FFE9B0'; g.fillRect(0,0,W,H);
+      const fl = .6 + .4*Math.abs(Math.sin(t/90) * Math.sin(t/37));
+      const cg = g.createRadialGradient(134, 95, 0, 134, 95, 14); cg.addColorStop(0, `rgba(255,220,120,${.7*fl})`); cg.addColorStop(1, 'rgba(255,200,80,0)');
+      g.globalAlpha = 1; g.fillStyle = cg; g.beginPath(); g.arc(134, 95, 14, 0, 6.283); g.fill();
+      g.restore();
+    }
+    function drawStageBg(t){ if(S.stg === 2) drawGameRoom(t); else if(S.stg === 3) drawLounge(t); else if(S.stg === 4) drawJikka(t); else drawRoom(t); }
 
     // ポーズごとの演出（粒）
     function poseFx(tag, t, x, top, h){
@@ -2280,6 +2295,8 @@
     $('dCut').textContent = ['green','red','rainbow'].map(c => `${{green:'緑',red:'赤',rainbow:'虹'}[c]} ${(expectOf(f => cutRow(f)[c] || 0)*100).toFixed(0)}%`).join(' / ');
     $('dGisi').textContent = `今回 ${state.gisi ? state.gisi + '段' : 'なし'}（③以上の期待度 ${(expectOf(f => gisiRow(f).slice(3).reduce((a,b)=>a+b,0))*100).toFixed(0)}%）`;
     $('setting').disabled = busy;
+    // ステージ切り替えは通常ステージ（チャンス・ボーナス・大当たり確定中以外）で、回転していないときだけ
+    $('stageSw').disabled = busy || !!state.at || !!state.cz || state.peka;
     $('dPeka').textContent = state.peka ? `点灯（${state.pekaType}）` : (state.postPeka ? '後ペカ待ち' : '消灯');
     reels.forEach((r,i) => $('dS'+i).textContent = r.slide === null ? '-' : `${r.slide}コマ`);
   }
@@ -2371,7 +2388,7 @@
       const rate = dbg.stage ? 1 : isBig(hot) ? .12 : ['WML','BEL','CHEM'].includes(hot) ? .06 : .03;
       if(state.stageCount >= state.stageLimit || Math.random() < rate){
         state.stageCount = 0; state.stageLimit = 30 + Math.floor(Math.random()*21);
-        const next = isBig(hot) && Math.random() < .6 && state.stage !== 3 ? 3 : pick([1,2,3].filter(n => n !== state.stage));
+        const next = isBig(hot) && Math.random() < .6 && state.stage !== 3 ? 3 : pick([1,2,3,4].filter(n => n !== state.stage));
         state.stage = next; screen.changeStage(next); sfx.stage();
       }
     }
@@ -2688,6 +2705,18 @@
     if(!state.at) return;
     if(state.phase === 'spinning'){ state.skipQueued = true; $('skipBtn').classList.add('queued'); $('skipBtn').textContent = 'SKIP予約'; return; }
     skipAT();
+  });
+
+  // ステージ切り替えボタン：押すたびに 1→2→3→4→1 と切り替え（強制移行までのゲーム数も数え直す）
+  const STAGE_NAMES = {1:'配信部屋', 2:'ゲーム部屋', 3:'バーラウンジ', 4:'実家'};
+  $('stageSw').addEventListener('click', () => {
+    if(state.phase === 'spinning' || state.at || state.cz || state.peka) return;
+    audio.init();
+    state.stage = state.stage % 4 + 1;
+    state.stageCount = 0; state.stageLimit = 30 + Math.floor(Math.random()*21);
+    screen.changeStage(state.stage); sfx.stage();
+    setMsg(`STAGE CHANGE：${STAGE_NAMES[state.stage]}`);
+    save(); updateUI();
   });
 
   // 設定変更
