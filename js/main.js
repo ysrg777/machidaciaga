@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030321', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030321', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030321', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030350', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030350', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030350', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -478,6 +478,7 @@
     czWeak(){ audio.tone(220,0,.3,{type:'triangle',vol:.08}); audio.tone(262,.15,.3,{type:'triangle',vol:.06}); },
     czStrong(){ audio.noise(0,.2,.3,800); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.05 + k*.06,.2,{type:'square',vol:.07})); },
     czCont(){ [523,659,784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'triangle',vol:.1})); [0,.15,.3].forEach(a=>audio.noise(.5 + a,.3,.15,1800)); },
+    notify(){ audio.tone(1568,0,.12,{type:'sine',vol:.07}); audio.tone(2093,.1,.18,{type:'sine',vol:.07}); },
     staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
@@ -568,7 +569,8 @@
     sound: store.get('slot.sound', true),
     bgm: store.get('slot.bgm', true),
     setting: store.get('slot.setting', 6),   // 初期値は設定6
-    reelSpeed: store.get('slot.reelSpeed', 'normal')
+    reelSpeed: store.get('slot.reelSpeed', 'normal'),
+    name: store.get('slot.name', ''), over1000: store.get('slot.over1000', false)
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
@@ -762,33 +764,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030321';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030350';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030321';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030350';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030321';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030350';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030321';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030350';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030321';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030350';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030321';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030350';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030321';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030350';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030321';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030350';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030321';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030350';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -805,7 +807,7 @@
       aim:null, cut:null, cutT:-1e9, gisi:0, gisiT:-1e9, gisiFx:[], ooiT:-1e9,
       cz:null, czT:-1e9, czEndT:-1e9, pose:0, poseT:0,
       stg:1, stageT:-1e9, np:null, npCat:'', npT:0, pfx:[], kiaiT:-1e9,
-      czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false};
+      czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false, players:null, bq:[], bcur:null, bT:0};
 
     function resize(){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -922,6 +924,10 @@
         for(let k=0;k<=5;k++) rg.addColorStop(k/5, `hsl(${(o + k*60) % 360},100%,62%)`);
         g.save(); g.font = 'bold 9.5px sans-serif'; g.fillStyle = '#fff'; g.fillText('👁', 44, 13);
         g.shadowColor = `hsl(${o},100%,60%)`; g.shadowBlur = 6; g.fillStyle = rg; g.fillText('7777', 57, 13); g.restore();
+      } else if(S.players !== null){
+        // 実際にプレイ中の人数（Firebaseで集計）
+        g.fillStyle = '#5DFF8A'; g.beginPath(); g.arc(47, 12.5, 2.4, 0, 6.283); g.fill();
+        g.fillStyle = '#fff'; g.fillText(`${S.players}人プレイ中`, 52, 13);
       } else g.fillText('👁 ' + Math.floor(S.viewers).toLocaleString(), 44, 13);
       g.fillStyle = 'rgba(0,0,0,.45)'; rrPath(g, W - 64, 6, 58, 13, 4); g.fill();
       g.fillStyle = '#fff'; g.fillText('❤ ' + (S.likes >= 10000 ? (S.likes/10000).toFixed(1) + '万' : S.likes), W - 58, 13);
@@ -1528,6 +1534,27 @@
       if(Math.random() < .15) hearts(1, true);
     }
 
+    // ほかのプレイヤーのお知らせ：液晶上部を右から左へ流れる帯
+    function drawBroadcast(t){
+      if(!S.bcur && S.bq.length){ S.bcur = S.bq.shift(); S.bT = t; }
+      if(!S.bcur) return;
+      g.setTransform(scale,0,0,scale,0,0);
+      g.save();
+      g.font = '900 12px "M PLUS 1p", sans-serif';
+      const tw = g.measureText(S.bcur).width, D = Math.max(5000, (W + tw) * 14);
+      const e = t - S.bT;
+      if(e > D){ S.bcur = null; g.restore(); return; }
+      const a = Math.min(1, e/200, (D - e)/300);
+      g.globalAlpha = a;
+      const gr = g.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, 'rgba(120,0,40,.88)'); gr.addColorStop(.5, 'rgba(200,20,60,.92)'); gr.addColorStop(1, 'rgba(120,0,40,.88)');
+      g.fillStyle = gr; g.fillRect(0, 22, W, 20);
+      g.fillStyle = '#FFE14D'; g.fillRect(0, 22, W, 1.5); g.fillRect(0, 40.5, W, 1.5);
+      const x = W - (e / D) * (W + tw + 20);
+      g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = 3; g.strokeStyle = '#3a0010';
+      g.strokeText(S.bcur, x, 32.5); g.fillStyle = '#fff'; g.fillText(S.bcur, x, 32.5);
+      g.restore();
+    }
+
     // 店員アシスト中のバッジ
     function drawStaffBadge(t){
       g.save(); g.textBaseline = 'middle';
@@ -1788,7 +1815,7 @@
     function loop(t){
       requestAnimationFrame(loop);
       if(document.hidden) return;
-      try { frame(t); }
+      try { frame(t); drawBroadcast(t); }
       catch(err){ if(t - lastErr > 5000){ console.error(err); lastErr = t; } g.restore(); g.globalAlpha = 1; }
     }
 
@@ -1829,6 +1856,8 @@
       get mode(){ return S.mode; },
       setAim(key){ S.aim = key; },
       setLucky(on){ S.lucky = on; },
+      setPlayers(n){ S.players = n; },
+      broadcast(text){ S.bq.push(text); comment(text, ['📣', 'お知らせ']); },
       setStaff(on){ S.staff = on; if(on) comment('店員さん来た！', pick(VIEWERS)); },
       setCZ(cz){ S.cz = cz ? {...cz} : null; },
       changeStage(n){ S.stg = n; S.stageT = performance.now(); S.np = null; comment('STAGE CHANGE!', pick(VIEWERS)); },
@@ -2294,6 +2323,7 @@
   const flagName = f => f ? (OJ_NAME[f] || SYM[f].name) : 'ハズレ';
   function setMsg(t){ msgEl.textContent = t; }
   function updateUI(){
+    if(typeof checkMilestones === 'function') checkMilestones();
     $('credit').textContent = state.credits;
     $('payout').textContent = state.payout;
     $('games').textContent = state.games;
@@ -2594,6 +2624,7 @@
         });
       }, 3000);
       setMsg(`${SYM[flag].name}揃い！ AT突入（${AT_GOAL[flag]}枚まで）`);
+      net.send('big', flag);
       $('topper').classList.add('party');
     } else if(state.at){
       // --- AT中 ---
@@ -2739,10 +2770,106 @@
   });
 
   // ================================================================
+  // 同時プレイ人数＆みんなへのお知らせ：Firebase Realtime Database を使う
+  //   ・presence/<匿名ID> … 今開いている人。閉じる・切断すると自動で消える → 液晶左上に人数表示
+  //   ・events/<自動ID>   … 大当たりなどの出来事。他の人の液晶にメッセージが流れる
+  //   ・FIREBASE_CONFIG が空のあいだは何もしない（今までどおり架空の視聴者数）
+  // ================================================================
+  // Firebaseの設定値（公開前提の値。読み書きできる範囲はデータベースのルールで制限している）
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyCJTBJQFfo-ORWfANsBQevro75ekl3R36Q',
+    authDomain: 'machidaciaga.firebaseapp.com',
+    databaseURL: 'https://machidaciaga-default-rtdb.asia-southeast1.firebasedatabase.app',
+    projectId: 'machidaciaga',
+    appId: '1:114237876382:web:447c3e7476a8958755338f'
+  };
+  // お知らせの種類と文面
+  const EVENT_TEXT = {
+    big:     (n, d) => `🎉 ${n}さんが${d === 'S7' ? '777' : 'BAR'}で大当たり！`,
+    broke:   (n)    => `💸 ${n}さんのメダルがなくなりました…`,
+    k1000:   (n)    => `🪙 ${n}さんのメダルが1000枚を突破！`,
+    premier: (n, d) => `🌈 ${n}さんがプレミア演出${d ? `「${d}」` : ''}を引いた！`
+  };
+  const net = (() => {
+    let db = null, uid = null, fb = null, joinedAt = Date.now(), lastSend = {};
+    async function init(){
+      if(!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.databaseURL) return;
+      try {
+        const base = 'https://www.gstatic.com/firebasejs/10.12.2';
+        const app_ = await import(`${base}/firebase-app.js`);
+        const auth_ = await import(`${base}/firebase-auth.js`);
+        fb = await import(`${base}/firebase-database.js`);
+        const app = app_.initializeApp(FIREBASE_CONFIG);
+        const {user} = await auth_.signInAnonymously(auth_.getAuth(app));   // 匿名ログイン（個人情報なし）
+        uid = user.uid; db = fb.getDatabase(app);
+        const me = fb.ref(db, `presence/${uid}`);
+        fb.onValue(fb.ref(db, '.info/connected'), snap => {
+          if(snap.val() !== true) return;
+          fb.onDisconnect(me).remove().then(() => fb.set(me, {t: fb.serverTimestamp(), name: state.name || ''}));
+        });
+        fb.onValue(fb.ref(db, 'presence'), snap => screen.setPlayers(Math.max(1, snap.size)));
+        // 開いた後に起きた、他の人の出来事だけを受け取る
+        const q = fb.query(fb.ref(db, 'events'), fb.orderByChild('t'), fb.startAt(joinedAt - 5000));
+        fb.onChildAdded(q, snap => {
+          const e = snap.val();
+          if(!e || e.uid === uid || !EVENT_TEXT[e.type]) return;
+          receive(e);
+        });
+      } catch(err){ console.warn('オンライン機能を開始できませんでした', err); db = null; }
+    }
+    function receive(e){ screen.broadcast(EVENT_TEXT[e.type](cleanName(e.name), e.detail)); sfx.notify(); }
+    // 出来事を送る（同じ種類は30秒に1回まで）
+    function send(type, detail = ''){
+      if(!state.name) return;
+      const now = Date.now();
+      if(lastSend[type] && now - lastSend[type] < 30000) return;
+      lastSend[type] = now;
+      if(!db) return;
+      fb.push(fb.ref(db, 'events'), {uid, name: state.name, type, detail: String(detail).slice(0, 30), t: fb.serverTimestamp()}).catch(() => {});
+    }
+    function rename(){ if(db && uid) fb.update(fb.ref(db, `presence/${uid}`), {name: state.name}).catch(() => {}); }
+    return {init, send, rename, test: (type = 'big') => receive({name:'テスト', type, detail:'S7'})};
+  })();
+  // 名前に使えない文字を取り除いて、長さを制限する
+  function cleanName(v){ return String(v || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12) || '名無し'; }
+
+  // ================================================================
+  // リスナー名の登録（初回だけ表示。あとから「名前」ボタンで変更可）
+  // ================================================================
+  function openName(){
+    $('nameInput').value = state.name || '';
+    $('nameModal').hidden = false;
+    setTimeout(() => $('nameInput').focus(), 50);
+  }
+  function saveName(){
+    const v = cleanName($('nameInput').value);
+    if(!$('nameInput').value.trim()){ $('nameErr').textContent = '名前を入力してください'; return; }
+    state.name = v; store.set('slot.name', v);
+    $('nameModal').hidden = true; $('nameErr').textContent = '';
+    $('nameBtn').textContent = `👤 ${v}`;
+    setMsg(`ようこそ、${v}さん！`);
+    net.rename();
+  }
+  $('nameSave').addEventListener('click', saveName);
+  $('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); saveName(); } });
+  $('nameBtn').addEventListener('click', openName);
+  if(state.name) $('nameBtn').textContent = `👤 ${state.name}`;
+  else setTimeout(openName, 1200);
+  net.init();
+  state.netReady = true;
+
+  // メダル1000枚突破（一度超えたら、900枚を下回るまで再送しない）
+  function checkMilestones(){
+    if(!state.netReady) return;   // お知らせの準備ができてから判定
+    if(state.credits >= 1000 && !state.over1000){ state.over1000 = true; store.set('slot.over1000', true); net.send('k1000'); }
+    else if(state.credits < 900 && state.over1000){ state.over1000 = false; store.set('slot.over1000', false); }
+  }
+
+  // ================================================================
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610030321';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610030350';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -2781,10 +2908,13 @@
   // ================================================================
   const CHARGE = 100;
   function needCharge(){ return state.credits < BET && !state.replay && state.phase !== 'spinning'; }
-  function showCharge(on){ $('chargeBar').hidden = !on; if(on) sfx.miss(); }
+  function showCharge(on){
+    $('chargeBar').hidden = !on;
+    if(on){ sfx.miss(); if(!state.brokeSent){ state.brokeSent = true; net.send('broke'); } }
+  }
   $('chargeBtn').addEventListener('click', () => {
     audio.init();
-    state.credits += CHARGE; state.charged = (state.charged || 0) + CHARGE;
+    state.credits += CHARGE; state.charged = (state.charged || 0) + CHARGE; state.brokeSent = false;
     showCharge(false); sfx.coin();
     setMsg(`メダルを${CHARGE}枚チャージしました`);
     save(); updateUI();
@@ -2891,6 +3021,7 @@
   let forceStage = false;
   $('stageBtn').addEventListener('click', () => { forceStage = true; setMsg('次のゲームでステージが変わります'); });
   $('gekiPrev').addEventListener('click', () => { audio.init(); geki.start(); });
+  $('netTest').addEventListener('click', () => { audio.init(); net.test(pick(['big','broke','k1000','premier'])); });
   $('cutPrev').addEventListener('click', () => { audio.init(); const c = $('fCut').value; const type = ['green','red','rainbow'].includes(c) ? c : 'rainbow'; screen.cutin(type); sfx.cutin(type); });
   $('atBAR').addEventListener('click', () => debugAT('BAR'));
   $('atEnd').addEventListener('click', () => { if(state.at && state.phase !== 'spinning'){ endAT(); save(); updateUI(); } });

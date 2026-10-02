@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610030321">
+<link rel="stylesheet" href="css/style.css?ver=202610030350">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -104,7 +104,7 @@
       <label>目押し<select id="fAim">
         <option value="off">アシストなし</option><option value="flag">当選役を狙う</option><option value="seven">7を狙う</option></select></label>
     </div>
-    <div class="dbgbtns"><button class="small" id="atS7">AT突入（7）</button><button class="small" id="atBAR">AT突入（BAR）</button><button class="small" id="atEnd">AT終了</button><button class="small" id="czBtn">チャンスステージ突入</button><button class="small" id="stageBtn">次ゲームでステージ変更</button><button class="small" id="gekiPrev">激アツを見る</button><button class="small" id="cutPrev">カットインを見る</button></div>
+    <div class="dbgbtns"><button class="small" id="atS7">AT突入（7）</button><button class="small" id="atBAR">AT突入（BAR）</button><button class="small" id="atEnd">AT終了</button><button class="small" id="czBtn">チャンスステージ突入</button><button class="small" id="stageBtn">次ゲームでステージ変更</button><button class="small" id="gekiPrev">激アツを見る</button><button class="small" id="cutPrev">カットインを見る</button><button class="small" id="netTest">お知らせ受信テスト</button></div>
     <div class="dbgnote">この欄を開いている間だけ有効。「7を狙う」でハズレ時に押すと、テンパイからの蹴飛ばし（ガセ煽り）が見られます。</div>
     <div class="slides"><span id="dS0">-</span><span id="dS1">-</span><span id="dS2">-</span></div>
   </div>
@@ -123,6 +123,7 @@
     </div>
   </div>
   <div class="foot">
+    <button class="small" id="nameBtn">👤 名前</button>
     <button class="small" id="dbgBtn" aria-pressed="false">内部を見る</button>
     <button class="small" id="sound">音：オン</button>
     <button class="small" id="reset">リセット</button>
@@ -158,6 +159,15 @@
 <canvas id="gekiatsu" aria-hidden="true" hidden></canvas>
 <canvas id="bonusIn" aria-hidden="true" hidden></canvas>
 <canvas id="kakutei" aria-hidden="true" hidden></canvas>
+<div class="namebox" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
+  <div class="namecard">
+    <div class="name-title" id="nameTitle">リスナー名を登録</div>
+    <div class="name-sub">大当たりなどのとき、ほかのプレイヤーの画面にこの名前でお知らせが流れます</div>
+    <input id="nameInput" maxlength="12" placeholder="例：たけし" autocomplete="nickname" enterkeyhint="done">
+    <div class="name-err" id="nameErr"></div>
+    <button id="nameSave">登録する</button>
+  </div>
+</div>
 <div class="charge" id="chargeBar" role="alertdialog" aria-label="メダルのチャージ" hidden>
   <div class="charge-msg">🪙 メダルがなくなりました</div>
   <div class="charge-sub">チャージすると続けて遊べます</div>
@@ -175,6 +185,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610030321"></script>
+<script src="js/main.js?ver=202610030350"></script>
 </body>
 </html>
