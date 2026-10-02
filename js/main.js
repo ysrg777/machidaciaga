@@ -299,9 +299,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030253', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030253', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030253', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030305', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030305', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030305', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -759,33 +759,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030253';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030305';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030253';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030305';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030253';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030305';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030253';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030305';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030253';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030305';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030253';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030305';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030253';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030305';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030253';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030305';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030253';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030305';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2730,6 +2730,33 @@
     if(state.phase === 'spinning'){ state.skipQueued = true; $('skipBtn').classList.add('queued'); $('skipBtn').textContent = 'SKIP予約'; return; }
     skipAT();
   });
+
+  // ================================================================
+  // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
+  // 今開いているものより新しければリロードボタンを出す
+  // ================================================================
+  const APP_VER = '202610030305';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  (function watchUpdate(){
+    if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
+    let latest = null, dismissed = null;
+    const check = () => fetch(`version.json?t=${Date.now()}`, {cache:'no-store'})
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if(!j || !j.ver || j.ver === APP_VER || j.ver === dismissed) return;
+        latest = j.ver; $('updateBar').hidden = false;
+      }).catch(() => {});
+    setTimeout(check, 5000);
+    setInterval(check, 60 * 1000);                                   // 1分ごと
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) check(); });   // アプリに戻ったときも
+    $('updateBtn').addEventListener('click', () => {
+      if(state.phase === 'spinning'){ setMsg('リールが止まってからリロードしてください'); return; }
+      save();
+      // HTML自体がキャッシュされていても新しい版を読むよう、URLにバージョンを付けて開き直す
+      const q = new URLSearchParams(location.search); q.set('v', latest || Date.now());
+      location.replace(`${location.pathname}?${q}${location.hash}`);
+    });
+    $('updateClose').addEventListener('click', () => { dismissed = latest; $('updateBar').hidden = true; });
+  })();
 
   // ステージ切り替えボタン：押すたびに 1→2→3→4→1 と切り替え（強制移行までのゲーム数も数え直す）
   const STAGE_NAMES = {1:'配信部屋', 2:'ゲーム部屋', 3:'バーラウンジ', 4:'実家'};

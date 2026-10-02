@@ -189,6 +189,16 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 #bonusIn[hidden]{display:none}
 #kakutei{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:47;cursor:pointer}
 #kakutei[hidden]{display:none}
+/* アップデートのお知らせ */
+.update{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-radius:999px;white-space:nowrap;
+  background:linear-gradient(#FFE14D,#FFB000);color:#3a2000;font:800 .85rem var(--sans);
+  box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 2px #fff3c4;animation:updIn .4s ease-out}
+.update[hidden]{display:none}
+.update button{border:0;border-radius:999px;cursor:pointer;font:900 .85rem var(--sans)}
+#updateBtn{background:#D8192F;color:#fff;padding:6px 14px}
+.update .x{background:transparent;color:#3a2000;padding:4px 8px;font-size:1rem}
+@keyframes updIn{from{transform:translate(-50%,-40px);opacity:0}}
 .auto{flex:none;width:58px;height:58px;border-radius:50%;cursor:pointer;border:3px solid #6A4A1A;
   background:radial-gradient(circle at 40% 30%,#3a1420,#1a0306);color:var(--muted);font:400 .8rem var(--vegas);letter-spacing:.05em}
 .auto[aria-pressed="true"]{background:radial-gradient(circle at 40% 30%,#b8fbff,#1aa7c0 60%,#0a5a6a);color:#00262e;border-color:#e6ffff;
