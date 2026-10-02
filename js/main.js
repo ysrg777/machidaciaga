@@ -10,9 +10,10 @@
     GRP:{html:'<span class="emo">🍇</span>',name:'ぶどう'},
     BEL:{html:'<span class="emo">🔔</span>',name:'ベル'},
     CHE:{html:'<span class="emo">🍒</span>',name:'チェリー'},
+    CHEM:{html:'<span class="emo">🍒</span>',name:'中段チェリー'},
     RPL:{html:'<b class="rpl">REPLAY</b>',name:'リプレイ'}
   };
-  const PAY = {S7:0, BAR:0, WML:10, BEL:14, GRP:8, CHE:2, RPL:0}; // 1ラインあたりの配当（7・BARはAT突入）
+  const PAY = {S7:0, BAR:0, WML:10, BEL:14, GRP:8, CHE:2, CHEM:2, RPL:0}; // 1ラインあたりの配当（7・BARはAT突入）
   const AT_GOAL = {S7:300, BAR:100};  // ATの払い出し目標枚数
   const BET = 3;
 
@@ -34,22 +35,34 @@
   const TABLE = [
     ['GRP', 10923], // 1/6
     ['RPL',  8978], // 約1/7.3
-    ['CHE',  1820], // 約1/36
+    ['CHE',  1000], // 角チェリー（上段・下段）約1/66
+    ['CHEM',  120], // 中段チェリー 約1/546
     ['BEL',    60], // 約1/1092
     ['WML',    60], // 約1/1092
     ['BAR',   218], // 約1/300
     ['S7',    164]  // 約1/400
   ];
   // 設定1〜6：7とBARの確率（65536分率）を変えて出玉率を調整。
-  // 出玉率は「ランプ点灯後に7・BARを揃え、ATを消化した場合」のシミュレーション値
+  // 出玉率は「ランプ点灯後に7・BARを揃え、ATを消化した場合」のシミュレーション値（チャンスステージ込み）
   const SETTINGS = {
-    1:{S7:117,  BAR:234,  rtp:80},
-    2:{S7:184,  BAR:369,  rtp:90},
-    3:{S7:310,  BAR:620,  rtp:105},
-    4:{S7:450,  BAR:900,  rtp:120},
-    5:{S7:950,  BAR:1900, rtp:150},
-    6:{S7:3500, BAR:7000, rtp:200}
+    1:{S7:27,   BAR:53,   rtp:80},
+    2:{S7:73,   BAR:147,  rtp:90},
+    3:{S7:167,  BAR:333,  rtp:105},
+    4:{S7:300,  BAR:600,  rtp:120},
+    5:{S7:783,  BAR:1567, rtp:150},
+    6:{S7:3600, BAR:7200, rtp:200}
   };
+  // 小役の「アツさ」：小役に当選したとき、さらに7・BARの抽選を行う（重複当選）
+  const DUP = {RPL:.001, GRP:.005, WML:.05, BEL:.01, CHE:.10, CHEM:.50};
+  // チャンスステージ移行：小役で7・BARの抽選に外れたときに抽選
+  const CZIN = {RPL:.01, GRP:.01, WML:.10, BEL:.05, CHE:.30, CHEM:.30};
+  // チャンスステージ：初回20G、終了時に50%で20G継続、合計100Gで強制終了。単独の7・BAR確率が4倍
+  const CZ_GAMES = 20, CZ_CONT = .5, CZ_MAX = 100, CZ_MULT = 4, CZ_CAP = 30000;
+  function czTable(){
+    let S7 = TABLE.find(t => t[0] === 'S7')[1] * CZ_MULT, BAR = TABLE.find(t => t[0] === 'BAR')[1] * CZ_MULT;
+    const tot = S7 + BAR; if(tot > CZ_CAP){ S7 *= CZ_CAP/tot; BAR *= CZ_CAP/tot; }
+    return TABLE.map(([k,w]) => [k, k === 'S7' ? Math.round(S7) : k === 'BAR' ? Math.round(BAR) : w]);
+  }
   function applySetting(n){
     TABLE.find(t => t[0] === 'S7')[1] = SETTINGS[n].S7;
     TABLE.find(t => t[0] === 'BAR')[1] = SETTINGS[n].BAR;
@@ -89,7 +102,7 @@
     LINES.forEach(line => {
       const s = [0,1,2].map(c => symAt(c, stops[c], line[c]));
       if(s[0] === s[1] && s[1] === s[2] && s[0] !== 'CHE') wins.push({key:s[0], line, cols:[0,1,2]});
-      else if(s[0] === 'CHE') wins.push({key:'CHE', line, cols:[0]});
+      else if(s[0] === 'CHE') wins.push({key:line[0] === 1 ? 'CHEM' : 'CHE', line, cols:[0]}); // 中段なら中段チェリー
     });
     return wins;
   }
@@ -97,8 +110,12 @@
   // 当選していない役が成立してしまっているか（＝蹴飛ばし失敗）
   function violates(stops, flag){
     // チェリーは左リールだけで成立するので、左が止まった時点で判定
-    if(stops[0] !== null && flag !== 'CHE' &&
-       LINES.some(line => symAt(0, stops[0], line[0]) === 'CHE')) return true;
+    // 角チェリーは上段・下段だけ、中段チェリーは中段だけに止めてよい
+    if(stops[0] !== null) for(const line of LINES){
+      if(symAt(0, stops[0], line[0]) !== 'CHE') continue;
+      const ok = (flag === 'CHE' && line[0] !== 1) || (flag === 'CHEM' && line[0] === 1);
+      if(!ok) return true;
+    }
     if(stops.every(p => p !== null)) return grade(stops).some(w => w.key !== flag);
     return false;
   }
@@ -163,11 +180,13 @@
     GRP: {walk:88, meteor:7,  chestBlue:4, chestGreen:1},
     RPL: {walk:88, meteor:7,  chestBlue:4, chestGreen:1},
     BEL: {walk:35, meteor:15, meteorGold:10, chestBlue:8,  chestGreen:15, chestRed:15, hokuto:2},
-    CHE: {walk:45, meteor:20, meteorGold:5,  chestBlue:10, chestGreen:12, chestRed:6,  hokuto:2},
+    CHE: {walk:55, meteor:20, meteorGold:4,  chestBlue:10, chestGreen:8,  chestRed:3},
+    CHEM:{walk:25, meteor:15, meteorGold:12, chestBlue:6,  chestGreen:15, chestRed:20, hokuto:7},
     WML: {walk:30, meteor:15, meteorGold:10, chestBlue:8,  chestGreen:15, chestRed:15, hokuto:7},
     BIG: {walk:30, meteor:10, meteorGold:12, chestBlue:3,  chestGreen:8,  chestRed:15, chestRainbow:7, hokuto:15}
   };
-  const sceneRow = flag => SCENE_TABLE[BIG.includes(flag) ? 'BIG' : String(flag)];
+  const isBig = f => f === 'BIG' || BIG.includes(f);
+  const sceneRow = flag => SCENE_TABLE[isBig(flag) ? 'BIG' : String(flag)] || SCENE_TABLE.null;
   function pickScene(flag){
     const row = sceneRow(flag);
     let r = Math.random() * Object.values(row).reduce((a,b)=>a+b, 0);
@@ -178,34 +197,25 @@
   let EXPECT, GEKI_EXPECT;
   function calcExpect(){ EXPECT = calcSceneExpect(); GEKI_EXPECT = calcGekiExpect(); }
   const calcSceneExpect = () => {
-    const pFlag = {null: 1 - TABLE.reduce((a,t)=>a+t[1],0)/65536};
-    TABLE.forEach(([k,w]) => pFlag[k] = w/65536);
     const res = {};
-    for(const scn of Object.keys(SCENES)){
-      let all = 0, big = 0;
-      for(const f of Object.keys(pFlag)){
-        const flag = f === 'null' ? null : f, row = sceneRow(flag);
-        const p = pFlag[f] * (row[scn] || 0) / Object.values(row).reduce((a,b)=>a+b,0);
-        all += p; if(BIG.includes(flag)) big += p;
-      }
-      res[scn] = all ? big/all : 0;
-    }
+    for(const scn of Object.keys(SCENES)) res[scn] = expectOf(f => { const row = sceneRow(f); return (row[scn] || 0) / Object.values(row).reduce((a,b)=>a+b,0); });
     return res;
   };
   const PRE_PEKA = 0.25; // 先ペカの割合（残りは3つ目のSTOPで後ペカ）
 
   // 激アツ演出（全画面カットイン）の発生率。第2停止で発生
-  const GEKI_RATE = {BIG:.35, WML:.06, BEL:.06, CHE:.03, other:.003};
+  const GEKI_RATE = {BIG:.40, CHEM:.02, WML:.01, BEL:.01, CHE:.004, other:.0003};
 
   // カットイン（リール回転開始時）：緑 < 赤 < 虹（虹は7・BAR確定）
   const CUTIN_TABLE = {
-    BIG:  {green:.12, red:.30, rainbow:.15},
-    WML:  {green:.20, red:.12},
-    BEL:  {green:.20, red:.12},
-    CHE:  {green:.15, red:.05},
-    other:{green:.03, red:.005}
+    BIG:  {green:.06, red:.35, rainbow:.15},
+    CHEM: {green:.15, red:.10},
+    WML:  {green:.12, red:.05},
+    BEL:  {green:.12, red:.05},
+    CHE:  {green:.06, red:.015},
+    other:{green:.015, red:.0015}
   };
-  const cutRow = f => CUTIN_TABLE[BIG.includes(f) ? 'BIG' : (CUTIN_TABLE[f] ? f : 'other')];
+  const cutRow = f => CUTIN_TABLE[isBig(f) ? 'BIG' : (CUTIN_TABLE[f] ? f : 'other')];
   function pickCutin(f){
     let r = Math.random();
     for(const [k, p] of Object.entries(cutRow(f))){ if(r < p) return k; r -= p; }
@@ -213,13 +223,14 @@
   }
   // 擬似連ステップアップ：何段目まで進むか（0＝なし）。⑤はメガポコナイト（激アツ）
   const GISI_TABLE = {
-    BIG:  [.20, .15, .18, .17, .15, .15],
-    WML:  [.40, .20, .15, .12, .09, .04],
-    BEL:  [.40, .20, .15, .12, .09, .04],
-    CHE:  [.62, .15, .11, .08, .03, .01],
-    other:[.90, .07, .022, .006, .002, 0]
+    BIG:  [.25, .12, .15, .16, .16, .16],
+    CHEM: [.45, .20, .15, .10, .07, .03],
+    WML:  [.55, .20, .12, .08, .04, .01],
+    BEL:  [.55, .20, .12, .08, .04, .01],
+    CHE:  [.72, .14, .08, .04, .02, 0],
+    other:[.94, .045, .012, .0025, .0005, 0]
   };
-  const gisiRow = f => GISI_TABLE[BIG.includes(f) ? 'BIG' : (GISI_TABLE[f] ? f : 'other')];
+  const gisiRow = f => GISI_TABLE[isBig(f) ? 'BIG' : (GISI_TABLE[f] ? f : 'other')];
   function pickGisi(f){
     let r = Math.random();
     const row = gisiRow(f);
@@ -227,27 +238,30 @@
     return 0;
   }
   // 演出ごとの7・BAR期待度（今の設定の確率から計算）
+  // 重複当選も含めた「演出に使う当選状況」の分布（'BIG'＝7・BAR当選）
+  function effDist(){
+    const out = []; let rest = 1;
+    TABLE.forEach(([k,w]) => { const p = w/65536; rest -= p;
+      if(DUP[k]){ out.push(['BIG', p*DUP[k]]); out.push([k, p*(1 - DUP[k])]); } else out.push([k, p]); });
+    out.push([null, rest]);
+    return out;
+  }
   function expectOf(rateFn){
-    let all = 0, big = 0, rest = 1;
-    TABLE.forEach(([k,w]) => { const p = w/65536; rest -= p; const r = rateFn(k); all += p*r; if(BIG.includes(k)) big += p*r; });
-    all += rest * rateFn(null);
+    let all = 0, big = 0;
+    effDist().forEach(([k,p]) => { const r = rateFn(k); all += p*r; if(isBig(k)) big += p*r; });
     return all ? big/all : 0;
   }
   const GISI_START = 500, GISI_GAP = 1200, GISI_FREEZE = 420;
   const CUT_DUR = 1500;   // カットインの表示時間
   const GISI5_HOLD = 2000;  // ⑤追いメガポコナイトを液晶で見せる時間。その後に全画面の激アツ
-  const GEKI_DUR = 7000;   // 全画面の激アツは7秒表示（タップで早送り可）
-  const gekiRate = f => BIG.includes(f) ? GEKI_RATE.BIG : (GEKI_RATE[f] ?? GEKI_RATE.other);
-  const calcGekiExpect = () => {
-    let all = 0, big = 0, rest = 1;
-    TABLE.forEach(([k,w]) => { const p = w/65536; rest -= p; all += p*gekiRate(k); if(BIG.includes(k)) big += p*gekiRate(k); });
-    all += rest * gekiRate(null);
-    return big / all;
-  };
+  const GEKI_DUR = 5000;   // 全画面の激アツは5秒表示（タップで早送り可）
+  const gekiRate = f => isBig(f) ? GEKI_RATE.BIG : (GEKI_RATE[f] ?? GEKI_RATE.other);
+  const calcGekiExpect = () => expectOf(gekiRate);
 
   // ================================================================
   // 6. サウンド（Web Audio APIで合成。音声ファイル不要）
   // ================================================================
+
 
 
   const audio = {
@@ -282,11 +296,12 @@
         delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(master);
         const bus = ctx.createGain(); bus.connect(master); bus.connect(delay);
         this.ctx = ctx; this.fx = bus; this.master = master;
-        // 効果音の音源を読み込んでおく（assets/sound）
+        // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3', 'aiBuf');
+        load('assets/sound/ooi.mp3?ver=202610030051', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030051', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030051', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -393,7 +408,30 @@
       setTimeout(() => g.disconnect(), 800);
     },
     // 今の拍の位置（キャラをリズムに合わせて揺らす用）
-    beat(){ return this.playing ? (audio.ctx.currentTime - this.loopStart) * BPM / 60 : performance.now()/1000 * BPM / 60; }
+    // キャラの動き用の拍。音声の時計（一時停止すると止まる）ではなく画面の時計で数える
+    beat(){ return performance.now()/1000 * BPM / 60; }
+  };
+
+  // ボーナスゲーム中のBGM：ループ再生、フェードイン／アウト
+  const bonusBgm = {
+    src:null, gain:null,
+    get playing(){ return !!this.src; },
+    start(){
+      if(this.src || !audio.ctx || !audio.bonusBuf) return;
+      const c = audio.ctx, t = c.currentTime;
+      const src = c.createBufferSource(), g = c.createGain();
+      src.buffer = audio.bonusBuf; src.loop = true;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.8, t + 1.2);
+      src.connect(g); g.connect(audio.master); src.start();
+      this.src = src; this.gain = g;
+    },
+    stop(){
+      if(!this.src) return;
+      const c = audio.ctx, t = c.currentTime, src = this.src, g = this.gain;
+      g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(Math.max(g.gain.value, .0001), t); g.gain.exponentialRampToValueAtTime(.0001, t + .8);
+      src.stop(t + .85);
+      this.src = null; this.gain = null;
+    }
   };
 
   const sfx = {
@@ -414,6 +452,7 @@
       [1, 1.26, 1.5, 2].forEach((m,k) => audio.tone(base*m, .08 + k*.06, .35, {type:'square', vol:.07}));
       if(type === 'rainbow') [0,.1,.2,.3,.4].forEach(a => audio.tone(2637, .5 + a, .12, {type:'sine', vol:.07}));
     },
+    // （ボーナスBGMの再生は bonusBgm を参照）
     // 全画面の激アツ：「愛してる」の音源を再生
     aishiteru(){
       if(!state.sound || !audio.ctx || !audio.aiBuf) return;
@@ -431,6 +470,27 @@
     gisi(k){
       audio.noise(0,.12,.5,700); audio.tone(110,0,.18,{type:'square',vol:.18,to:55});
       audio.tone(440*Math.pow(1.19,k),.12,.3,{type:'triangle',vol:.1}); audio.tone(660*Math.pow(1.19,k),.2,.35,{type:'triangle',vol:.08});
+    },
+    stage(){ audio.noise(0,.35,.25,2500,'bandpass'); audio.tone(300,0,.35,{type:'sine',vol:.08,to:1200}); },
+    czJudge(){ [392,392,523].forEach((f,k)=>audio.tone(f,k*.15,.12,{type:'square',vol:.06})); },
+    czWeak(){ audio.tone(220,0,.3,{type:'triangle',vol:.08}); audio.tone(262,.15,.3,{type:'triangle',vol:.06}); },
+    czStrong(){ audio.noise(0,.2,.3,800); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.05 + k*.06,.2,{type:'square',vol:.07})); },
+    czCont(){ [523,659,784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'triangle',vol:.1})); [0,.15,.3].forEach(a=>audio.noise(.5 + a,.3,.15,1800)); },
+    czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
+    czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
+    // 大当たり確定：流れ星のきらめき → 上昇音 → 和音
+    kakutei(){
+      [3136,2637,2349,2093,1760].forEach((f,k)=>audio.tone(f,k*.05,.15,{type:'sine',vol:.06}));
+      audio.tone(300,.45,.5,{type:'sawtooth',vol:.06,to:1800});
+      [784,988,1175,1568].forEach(f=>audio.tone(f,.85,.9,{type:'triangle',vol:.07}));
+      audio.noise(.85,.3,.2,3000,'highpass');
+    },
+    // ボーナス突入：ドラムロール → 幕が開いてファンファーレ
+    bonusIn(){
+      for(let k=0;k<14;k++) audio.noise(k*.045, .05, .18 + k*.012, 900);
+      [523,659,784,1047].forEach((f,k)=>{ audio.tone(f,.68 + k*.09,.28,{type:'square',vol:.08}); audio.tone(f*2,.68 + k*.09,.28,{type:'triangle',vol:.05}); });
+      [1047,1319,1568,2093].forEach(f=>audio.tone(f,1.1,1.1,{type:'triangle',vol:.06}));
+      [0,.12,.24,.36].forEach(a=>audio.tone(2637,1.3 + a,.12,{type:'sine',vol:.05}));
     },
     atStart(){ [523,659,784,1047,784,1047,1319,1568].forEach((f,k)=>audio.tone(f,k*.09,.18,{type:'square',vol:.07})); },
     atEnd(){ [784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.12,.3,{type:'triangle',vol:.1})); },
@@ -493,6 +553,9 @@
     coinIn: saved ? saved.coinIn : 0,
     coinOut: saved ? saved.coinOut : 0,
     carry: saved ? saved.carry : null,
+    cz: saved ? saved.cz || null : null, czGame: false,
+    stage: saved ? saved.stage || 1 : 1, dupBig: null,
+    stageCount: saved ? saved.stageCount || 0 : 0, stageLimit: saved ? saved.stageLimit || 0 : 0,
     at: saved ? saved.at || null : null, navi: null, ctrlFlag: null,
     payout: 0, replay: false, flag: null, ready: false, scene: null, tenpai: false, geki: false,
     cutin: null, gisi: 0, gisiDone: 0, gisiDelay: 0, lockUntil: 0, skipQueued: false, ooi: false,
@@ -504,7 +567,7 @@
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
-    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at});
+    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
 
   const reels = STRIPS.map((strip, i) => {
     const el = stripEls[i];
@@ -537,7 +600,7 @@
 
   $('paytable').innerHTML = [
     ['7 ×3', 'AT 300枚'], ['BAR ×3', 'AT 100枚'], ['ベル ×3', '14枚'], ['スイカ ×3', '10枚'],
-    ['ぶどう ×3', '8枚'], ['チェリー（左リール）', '2枚'], ['リプレイ ×3', '再遊技']
+    ['ぶどう ×3', '8枚'], ['角チェリー（左リール上段・下段）', '2枚'], ['中段チェリー', '2枚'], ['リプレイ ×3', '再遊技']
   ].map(([a,b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
 
   // ================================================================
@@ -628,7 +691,61 @@
   // ================================================================
   // 8-2. 液晶パネル（ライブ配信画面。論理サイズ320×160）
   // ================================================================
-  const VIEWERS = [['🐰','もも'],['🐻','くま吉'],['🐱','みけ'],['🐶','ぽち'],['🐼','ぱんだ'],['🦊','こん'],['🐹','はむ'],['🐧','ぺん'],['🐨','こあら'],['🐸','けろ']];
+  // リスナーとそれぞれの定番コメント（指定のアセット）。No.33〜40はハズレたときなどに出る辛口コメント
+  const LISTENERS = [
+    ['つばさ','こんにちは〜'],
+    ['みかん','今日もきたよ'],
+    ['たけし','お疲れさま〜'],
+    ['ゆうき','めっちゃ笑ったw'],
+    ['さくら','今日もかわいい'],
+    ['ケン','何の話してる？'],
+    ['あや','初見です！'],
+    ['しん','まだやってたw'],
+    ['まい','ご飯食べてくる'],
+    ['りょう','声でかいwww'],
+    ['なな','それは草'],
+    ['たろ','今日人多いね'],
+    ['ミホ','おかえり〜'],
+    ['こうじ','仕事終わった！'],
+    ['みゆ','癒されにきた'],
+    ['ゆう','その話好きw'],
+    ['あき','それ本当？'],
+    ['なお','また寝不足？'],
+    ['まさ','眠くなってきた'],
+    ['りな','こんばんは〜'],
+    ['けい','その服似合うね'],
+    ['しお','今日も元気ね'],
+    ['ひろ','何時まで配信？'],
+    ['もも','コメント読んでw'],
+    ['だい','それは無理あるw'],
+    ['ちか','また食べてるw'],
+    ['ゴウ','その話長いw'],
+    ['ゆき','え、今の何？'],
+    ['まこ','初見だけど面白い'],
+    ['れん','今日は静かだね'],
+    ['あい','それ好きだわ'],
+    ['ジョー','もっと喋って！'],
+    ['さと','そのノリ苦手…'],
+    ['カズ','今日は微妙かも'],
+    ['りく','なんかつまらん'],
+    ['ゆうた','前の方が良かった'],
+    ['あきら','今日は見ないかな'],
+    ['マナ','ちょっと無理かも'],
+    ['しゅん','うるさすぎるw'],
+    ['レオ','その話もういいw'],
+    ['のぞ','それ言っちゃう？'],
+    ['コウ','また同じ話だw'],
+    ['エリ','それ言いすぎw'],
+    ['たく','なんだこの配信w'],
+    ['まる','ずっと見てるよ'],
+    ['ハル','今日も来れた！'],
+    ['ゆめ','そろそろ寝ます'],
+    ['ソラ','また明日くるね'],
+    ['町田23位','え？なに？どしたぁ？'],
+    ['やすらぎ','朝までいく？']
+  ].map(([name, text], i) => ({name, text, av:["🐰", "🐻", "🐱", "🐶", "🐼", "🦊", "🐹", "🐧", "🐨", "🐸", "🐯", "🐮", "🐷", "🐵", "🐥", "🦁"][i % 16], salty: i >= 32 && i <= 39}));
+  const VIEWERS = LISTENERS.map(l => [l.av, l.name]);
+  const CALM_LISTENERS = LISTENERS.filter(l => !l.salty), SALTY_LISTENERS = LISTENERS.filter(l => l.salty);
   const TALK = {
     calm: ['こんばんは〜','かぴすけかわいい','のんびり配信すき','今日も来たよ','みかん乗ってるw','何ゲーム目？','ぶどう来て','まったり〜','おつかれさま','7見たい'],
     hype: ['おおお','きたか!?','アツい','ギフトきた！','これは…','こいこい','やばい','期待！'],
@@ -640,18 +757,30 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030051';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030051';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030051';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030051';
+
+  // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
+  const CZ_BG = new Image();
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030051';
+  const CZ_SPRITES = new Image();
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030051';
+
+  // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
+  const ST_A = new Image();
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030051';
+  const ST_B = new Image();
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030051';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -665,12 +794,18 @@
       nextFw:0, jumpT:-1e9, bigKey:null, tenpai:false, tenpaiT:0, at:null, navi:null, gain:0, gainT:-1e9,
       endInfo:null, comments:[], nextCom:0, hearts:[], nextHeart:0, viewers:1234, likes:12800,
       burst:false, shockT:-1e9, nico:[], rankNow:50, talkT:0, gifter:VIEWERS[1],
-      aim:null, cut:null, cutT:-1e9, gisi:0, gisiT:-1e9, gisiFx:[], ooiT:-1e9};
+      aim:null, cut:null, cutT:-1e9, gisi:0, gisiT:-1e9, gisiFx:[], ooiT:-1e9,
+      cz:null, czT:-1e9, czEndT:-1e9, pose:0, poseT:0,
+      stg:1, stageT:-1e9, np:null, npCat:'', npT:0, pfx:[], kiaiT:-1e9,
+      czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false};
 
     function resize(){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = cv.clientWidth || 320;
-      cv.width = Math.round(w * dpr); cv.height = Math.round(w / 2 * dpr);
+      const w = cv.getBoundingClientRect().width;
+      if(!w) return;
+      const cw = Math.round(w * dpr), ch = Math.round(w / 2 * dpr);
+      if(cw === cv.width && ch === cv.height) return;
+      cv.width = cw; cv.height = ch;
       scale = cv.width / W;
     }
 
@@ -774,7 +909,12 @@
       g.fillText('LIVE', 21, 13);
       g.fillStyle = 'rgba(0,0,0,.45)'; rrPath(g, 40, 6, 52, 13, 4); g.fill();
       g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = '8.5px sans-serif';
-      g.fillText('👁 ' + Math.floor(S.viewers).toLocaleString(), 44, 13);
+      if(S.lucky){
+        const rg = g.createLinearGradient(44, 0, 92, 0), o = (t/5) % 360;
+        for(let k=0;k<=5;k++) rg.addColorStop(k/5, `hsl(${(o + k*60) % 360},100%,62%)`);
+        g.save(); g.font = 'bold 9.5px sans-serif'; g.fillStyle = '#fff'; g.fillText('👁', 44, 13);
+        g.shadowColor = `hsl(${o},100%,60%)`; g.shadowBlur = 6; g.fillStyle = rg; g.fillText('7777', 57, 13); g.restore();
+      } else g.fillText('👁 ' + Math.floor(S.viewers).toLocaleString(), 44, 13);
       g.fillStyle = 'rgba(0,0,0,.45)'; rrPath(g, W - 64, 6, 58, 13, 4); g.fill();
       g.fillStyle = '#fff'; g.fillText('❤ ' + (S.likes >= 10000 ? (S.likes/10000).toFixed(1) + '万' : S.likes), W - 58, 13);
       // コメント欄（左下）
@@ -817,7 +957,7 @@
       } else if(key === 'RPL'){
         g.fillStyle = '#1A5FB4'; g.font = `bold ${size*.32}px sans-serif`; g.fillText('REPLAY', x, y);
       } else if(key){
-        g.font = `${size*.8}px sans-serif`; g.fillText({WML:'🍉', CHE:'🍒', BEL:'🔔', GRP:'🍇'}[key], x, y);
+        g.font = `${size*.8}px sans-serif`; g.fillText({WML:'🍉', CHE:'🍒', CHEM:'🍒', BEL:'🔔', GRP:'🍇'}[key] || '', x, y);
       }
       g.restore();
     }
@@ -832,7 +972,7 @@
       if(power) x += Math.sin(t/(power > 1 ? 25 : 45)) * power * 1.5;
       const color = S.scene === 'chestRainbow' ? `hsl(${(t/4)%360},90%,58%)` : GIFT[S.scene];
       g.save();
-      if(openAmt > 0 && S.result && S.result.flag){
+      if(openAmt > 0 && S.result && (S.result.flag || S.result.bigKey)){
         g.save(); g.translate(x, y - 16); g.rotate(t/900);
         for(let k=0;k<12;k++){ g.rotate(Math.PI/6); g.fillStyle = k%2 ? 'rgba(255,240,160,.45)' : 'rgba(255,200,80,.22)';
           g.beginPath(); g.moveTo(0,0); g.lineTo(70,-9); g.lineTo(70,9); g.fill(); }
@@ -854,7 +994,7 @@
       }
       if(openAmt > 0){
         const rise = Math.min(1, (t - S.resT)/500);
-        if(S.result && S.result.flag) drawSymbol(S.result.flag, x, y - 18 - rise*22, 26);
+        if(S.result && (S.result.bigKey || S.result.flag)) drawSymbol(S.result.bigKey || S.result.flag, x, y - 18 - rise*22, 26);
         else {
           g.fillStyle = `rgba(190,190,200,${.6*(1-rise*.6)})`;
           [[-7,0],[4,-5],[9,4]].forEach(([dx,dy]) => { g.beginPath(); g.arc(x+dx, y-16-rise*16+dy, 7+rise*4, 0, 6.283); g.fill(); });
@@ -865,7 +1005,7 @@
     // --- 予告：ランキング急上昇 ---
     function drawRank(t){
       const res = S.mode === 'result' ? S.result : null;
-      const success = res && BIG.includes(res.flag);
+      const success = res && res.big;
       const target = success ? 1 : RANKS[Math.min(S.stage, 3)];
       S.rankNow += (target - S.rankNow) * .12;
       const shown = Math.max(1, Math.round(S.rankNow));
@@ -1020,17 +1160,20 @@
     // --- 大当たり確定時の「◯◯を狙え！！」告知 ---
     function drawAimBanner(t){
       const key = S.aim, blink = Math.floor(t/350) % 2 === 0;
-      g.save();
-      g.fillStyle = 'rgba(20,0,10,.78)'; g.strokeStyle = blink ? '#FFE14D' : '#FF2D55'; g.lineWidth = 2;
-      rrPath(g, 58, 23, 204, 30, 8); g.fill(); g.stroke();
-      if(key === 'S7') for(let k=0;k<3;k++) draw7(g, 82 + k*22, 38, 24);
+      const pulse = 1 + .04*Math.sin(t/120);
+      g.save(); g.translate(W/2, 50); g.scale(pulse*.96, pulse*.96);  // 上の視聴者数（7777）にかからない位置
+      g.fillStyle = 'rgba(20,0,10,.85)'; g.strokeStyle = blink ? '#FFE14D' : '#FF2D55'; g.lineWidth = 3;
+      g.shadowColor = blink ? '#FFE14D' : '#FF2D55'; g.shadowBlur = 14;
+      rrPath(g, -146, -28, 292, 56, 12); g.fill(); g.shadowBlur = 0; g.stroke();
+      if(key === 'S7') for(let k=0;k<3;k++) draw7(g, -114 + k*34, 1, 42);
       else for(let k=0;k<3;k++){
-        g.fillStyle = '#161616'; g.fillRect(70 + k*25, 30, 22, 14); g.strokeStyle = '#F2C14E'; g.lineWidth = 1.5; g.strokeRect(70 + k*25, 30, 22, 14);
-        g.fillStyle = '#F2C14E'; g.font = 'bold 7px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BAR', 81 + k*25, 37.5);
+        const x = -134 + k*38;
+        g.fillStyle = '#161616'; g.fillRect(x, -13, 34, 26); g.strokeStyle = '#F2C14E'; g.lineWidth = 2; g.strokeRect(x, -13, 34, 26);
+        g.fillStyle = '#F2C14E'; g.font = 'bold 11px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BAR', x + 17, 1);
       }
-      g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = 'bold 15px "M PLUS 1p", sans-serif';
-      g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeText('を狙え！！', 150, 38);
-      g.fillStyle = blink ? '#FFE14D' : '#fff'; g.fillText('を狙え！！', 150, 38);
+      g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '900 25px "M PLUS 1p", sans-serif'; g.lineJoin = 'round';
+      g.lineWidth = 5; g.strokeStyle = '#000'; g.strokeText('を狙え！！', -12, 2);
+      g.fillStyle = blink ? '#FFE14D' : '#fff'; g.fillText('を狙え！！', -12, 2);
       g.restore();
     }
 
@@ -1141,6 +1284,353 @@
       g.restore();
     }
 
+    // ================================================================
+    // 通常ステージ（1〜3）：背景とキャラのポーズ・ポーズごとの演出
+    // ================================================================
+    // ステージごとに使うポーズ（スプライトの番号 0〜15）
+    const STAGE_POSES = {
+      1:{sheet:'A', idle:[0,1,3,13], hype:[1,3], happy:[2,9,13], sad:[10], love:[11]},
+      2:{sheet:'A', idle:[5,7,8,12,6], hype:[4,14], happy:[15,6], sad:[7,12], love:[15]},
+      3:{sheet:'B', idle:[0,4,6,8,9,13], hype:[5,15,1], happy:[2,3,12,10], sad:[8,7], love:[11,14]}
+    };
+    // ポーズごとの演出の種類
+    const POSE_FX = {
+      A:['chill','sparkle','hearts','glint','fire','game','drink','sway','notes','impact','tears','hearts','zzz','sparkle','speed','confetti'],
+      B:['sparkle','impact','hearts','notes','glint','fire','drink','tears','question','game','drink','hearts','impact','sparkle','bow','kiai']
+    };
+    const FX_TALK = {
+      fire:['燃えてる🔥','アツい！'], game:['何のゲーム？','うまいw'], drink:['いい飲みっぷり','グビッw'], zzz:['寝てるw','起きて〜'],
+      notes:['ノリノリ♪','いい曲'], tears:['泣いてるw','笑いすぎ'], speed:['速っ','どこ行くのw'], confetti:['推せる！','ペンライト振る！'],
+      glint:['グラサン似合う','かっけぇ'], question:['どうした？','悩んでる？'], bow:['こちらこそ！','よろしく〜'], kiai:['気合い！','うおお！'],
+      hearts:['かわいい','好き'], impact:['いけー！','きたー！']
+    };
+    const sheetImg = s => s === 'A' ? ST_A : ST_B;
+    // スプライトの各マスで、実際に絵がある範囲（透明部分を除いた範囲）を一度だけ測る。
+    // ポーズによって余白が違うため、マスごと拡大すると切り替えのたびに大きさが変わって見えていた
+    const boxCache = new Map();
+    function spriteBox(img, idx){
+      let boxes = boxCache.get(img);
+      if(!boxes){
+        const W0 = img.naturalWidth, cell = W0 / 4, cv2 = document.createElement('canvas');
+        cv2.width = W0; cv2.height = img.naturalHeight;
+        const c2 = cv2.getContext('2d'); c2.drawImage(img, 0, 0);
+        let data = null;
+        try { data = c2.getImageData(0, 0, W0, img.naturalHeight).data; } catch(e){ /* ローカルで直接開いた場合など：枠そのままで描く */ }
+        boxes = [];
+        if(!data){ for(let k=0;k<16;k++) boxes.push({x:(k % 4)*cell, y:Math.floor(k / 4)*cell, w:cell, h:cell}); boxCache.set(img, boxes); return boxes[idx]; }
+        for(let k=0;k<16;k++){
+          const ox = (k % 4)*cell, oy = Math.floor(k / 4)*cell;
+          let x0 = cell, y0 = cell, x1 = 0, y1 = 0;
+          for(let y=0;y<cell;y+=2) for(let x=0;x<cell;x+=2){
+            if(data[((oy + y)*W0 + ox + x)*4 + 3] > 40){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+          }
+          boxes.push(x1 > x0 ? {x:ox + x0, y:oy + y0, w:x1 - x0 + 2, h:y1 - y0 + 2} : {x:ox, y:oy, w:cell, h:cell});
+        }
+        boxCache.set(img, boxes);
+      }
+      return boxes[idx];
+    }
+    // 絵の高さを targetH にそろえて描く（横に長いポーズは maxW に収まるよう縮める）
+    function spriteSize(img, idx, targetH, maxW){
+      const b = spriteBox(img, idx), sc = Math.min(targetH / b.h, maxW / b.w);
+      return {b, sc, w:b.w*sc, h:b.h*sc};
+    }
+    function choosePose(cat, t){
+      const set = STAGE_POSES[S.stg], list = set[cat] || set.idle;
+      let p; do { p = pick(list); } while(list.length > 1 && p === S.np);
+      S.np = p; S.npCat = cat; S.npT = t;
+      const tag = POSE_FX[set.sheet][p];
+      if(FX_TALK[tag] && Math.random() < .35) comment(pick(FX_TALK[tag]));
+      if(tag === 'kiai') S.kiaiT = t;
+    }
+    function moodToCat(mood){
+      return mood === 'happy' || mood === 'jump' ? 'happy' : mood === 'sad' ? 'sad' : (mood === 'look' || mood === 'shock') ? 'hype' : 'idle';
+    }
+
+    // ステージ2：ゲーム部屋（夜）
+    function drawGameRoom(t){
+      const wall = g.createLinearGradient(0,0,0,H); wall.addColorStop(0,'#120e2e'); wall.addColorStop(1,'#2a1650');
+      g.fillStyle = wall; g.fillRect(0,0,W,H);
+      // 天井のLEDテープ（色が流れる）
+      for(let x=0;x<W;x+=4){ g.fillStyle = `hsl(${(x*1.2 + t/12) % 360},90%,60%)`; g.fillRect(x, 20, 4, 2); }
+      g.fillStyle = 'rgba(160,90,255,.12)'; g.fillRect(0, 22, W, 24);
+      // ネオンサイン
+      const on = Math.floor(t/700) % 5 !== 4;
+      g.save(); g.font = '900 13px "M PLUS 1p", sans-serif'; g.textAlign = 'center';
+      g.shadowColor = '#4FF3FF'; g.shadowBlur = on ? 12 : 0; g.fillStyle = on ? '#B8FBFF' : '#2a5a6a'; g.fillText('GAME', 268, 56);
+      g.shadowColor = '#FF3EA5'; g.fillStyle = on ? '#FFC4E4' : '#5a2a4a'; g.font = '900 9px "M PLUS 1p", sans-serif'; g.fillText('ON AIR', 268, 70); g.restore();
+      // 左のモニター（画面が光る）
+      g.fillStyle = '#0a0a14'; rrPath(g, 14, 50, 70, 44, 4); g.fill();
+      const sg = g.createLinearGradient(18, 54, 80, 90); sg.addColorStop(0, `hsl(${(t/20)%360},80%,45%)`); sg.addColorStop(1, '#1a1a6a');
+      g.fillStyle = sg; g.fillRect(18, 54, 62, 36);
+      g.fillStyle = 'rgba(255,255,255,.12)'; for(let y=54 + (t/40 % 4); y<90; y+=4) g.fillRect(18, y, 62, 1);
+      g.fillStyle = '#222'; g.fillRect(46, 94, 6, 10); g.fillRect(36, 104, 26, 3);
+      // 棚とフィギュア
+      g.fillStyle = '#3a2a5a'; g.fillRect(228, 86, 76, 4);
+      [['#FF7FB0',236],['#7FD3FF',254],['#FFE14D',272],['#9B5CFF',290]].forEach(([c,x],k) => { g.fillStyle = c; rrPath(g, x - 5, 72 - (k%2)*4, 10, 14 + (k%2)*4, 3); g.fill(); });
+      // 床とラグ
+      g.fillStyle = '#1a1030'; g.fillRect(0, DESK, W, H - DESK);
+      g.fillStyle = 'rgba(155,92,255,.35)'; g.beginPath(); g.ellipse(160, 150, 96, 12, 0, 0, 6.283); g.fill();
+      g.fillStyle = 'rgba(79,243,255,.25)'; g.beginPath(); g.ellipse(160, 150, 80, 8, 0, 0, 6.283); g.fill();
+    }
+    // ステージ3：バーラウンジ
+    function drawLounge(t){
+      const wall = g.createLinearGradient(0,0,0,H); wall.addColorStop(0,'#2a1208'); wall.addColorStop(1,'#5a2a10');
+      g.fillStyle = wall; g.fillRect(0,0,W,H);
+      // 酒棚
+      g.fillStyle = '#3a1a0a'; g.fillRect(70, 24, 180, 74);
+      for(let r=0;r<3;r++){
+        g.fillStyle = '#6a3a1a'; g.fillRect(70, 46 + r*24, 180, 3);
+        for(let k=0;k<11;k++){
+          const x = 78 + k*16, hh = 12 + ((k*7 + r*3) % 6), c = ['#3a6a2a','#8a2a1a','#c89a3a','#2a3a7a','#7a5a2a'][(k + r) % 5];
+          g.fillStyle = c; rrPath(g, x, 46 + r*24 - hh, 8, hh, 2); g.fill();
+          g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x + 1.5, 46 + r*24 - hh + 3, 1.5, hh - 5);
+        }
+      }
+      // 左右の赤いカーテン
+      ['#8a0a1a','#b0142a'].forEach((c,k) => { g.fillStyle = c;
+        for(let i=0;i<4;i++){ g.beginPath(); g.moveTo(i*10 + k*4, 0); g.quadraticCurveTo(i*10 + 6 + Math.sin(t/900 + i)*2, 80, i*10 + k*4, H); g.lineTo(i*10 + 10 + k*4, H); g.lineTo(i*10 + 10 + k*4, 0); g.fill(); }
+        for(let i=0;i<4;i++){ const x = W - 40 + i*10; g.beginPath(); g.moveTo(x + k*4, 0); g.quadraticCurveTo(x + 4 + Math.sin(t/900 + i)*2, 80, x + k*4, H); g.lineTo(x + 10 + k*4, H); g.lineTo(x + 10 + k*4, 0); g.fill(); } });
+      // スポットライト
+      const sp = g.createRadialGradient(160, 0, 4, 160, 70, 120); sp.addColorStop(0, 'rgba(255,230,160,.45)'); sp.addColorStop(1, 'rgba(255,230,160,0)');
+      g.fillStyle = sp; g.beginPath(); g.moveTo(140, 0); g.lineTo(180, 0); g.lineTo(250, H); g.lineTo(70, H); g.fill();
+      // シャンデリアの光
+      for(let k=0;k<7;k++){ g.globalAlpha = .5 + .5*Math.abs(Math.sin(t/400 + k)); g.fillStyle = '#FFE9A0'; g.beginPath(); g.arc(130 + k*10, 14 + (k%2)*3, 1.6, 0, 6.283); g.fill(); }
+      g.globalAlpha = 1;
+      // カウンター（床）
+      g.fillStyle = '#2a1206'; g.fillRect(0, DESK, W, H - DESK);
+      g.fillStyle = '#8a5a2a'; g.fillRect(0, DESK, W, 3);
+    }
+    function drawStageBg(t){ if(S.stg === 2) drawGameRoom(t); else if(S.stg === 3) drawLounge(t); else drawRoom(t); }
+
+    // ポーズごとの演出（粒）
+    function poseFx(tag, t, x, top, h){
+      const P = S.pfx, R = Math.random;
+      if(tag === 'fire' && R() < .7) P.push({k:'fire', x:x + (R()-.5)*h*.8, y:top + h*.95, vx:(R()-.5)*.3, vy:-1 - R()*1.2, life:1, s:3 + R()*4});
+      if(tag === 'notes' && R() < .05) P.push({k:'txt', ch:R() < .5 ? '♪' : '♫', x:x + (R() < .5 ? -1 : 1)*h*.45, y:top + h*.3, vx:(R()-.5)*.3, vy:-.5, life:1, c:pick(['#FF4F8B','#4FA8FF','#FFB000'])});
+      if(tag === 'hearts' && R() < .06) P.push({k:'heart', x:x + (R()-.5)*h*.9, y:top + h*.4, vx:(R()-.5)*.3, vy:-.6, life:1, s:3 + R()*3});
+      if(tag === 'sparkle' && R() < .08) P.push({k:'spark', x:x + (R()-.5)*h, y:top + R()*h*.7, life:1, s:2 + R()*3});
+      if(tag === 'zzz' && R() < .03) P.push({k:'txt', ch:'Z', x:x - h*.3, y:top + h*.35, vx:-.25, vy:-.45, life:1, c:'#4FA8FF', big:1});
+      if(tag === 'drink' && R() < .2) P.push({k:'bub', x:x - h*.25 + (R()-.5)*8, y:top + h*.25, vx:(R()-.5)*.3, vy:-.6 - R()*.4, life:1});
+      if(tag === 'tears' && R() < .25) P.push({k:'drop', x:x + (R() < .5 ? -1 : 1)*h*.18, y:top + h*.35, vx:(R() < .5 ? -1 : 1)*(1 + R()), vy:-1.2, life:1});
+      if(tag === 'confetti' && R() < .5) P.push({k:'conf', x:R()*W, y:-4, vx:(R()-.5)*.6, vy:.8 + R()*.8, life:1.6, c:pick(['#FF4F8B','#4FF3FF','#FFE14D','#9B5CFF','#5DFFB0']), r:R()*6});
+      if(tag === 'game' && R() < .15) P.push({k:'pix', x:x + (R()-.5)*h*.6, y:top + h*.75, vx:(R()-.5)*.8, vy:-.8 - R()*.5, life:1, c:pick(['#4FF3FF','#FF4F8B','#5DFFB0'])});
+      if(tag === 'question' && R() < .03) P.push({k:'txt', ch:'?', x:x + h*.4, y:top + h*.2, vx:.1, vy:-.4, life:1, c:'#4FA8FF', big:1});
+    }
+    function drawPoseFx(){
+      S.pfx = S.pfx.filter(p => p.life > 0);
+      g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
+      for(const p of S.pfx){
+        p.x += p.vx || 0; p.y += p.vy || 0; p.life -= p.k === 'conf' ? .008 : .012;
+        g.globalAlpha = Math.max(0, Math.min(1, p.life));
+        if(p.k === 'fire'){ g.fillStyle = `hsl(${20 + p.life*25},100%,${45 + p.life*15}%)`; g.beginPath(); g.arc(p.x, p.y, p.s*p.life, 0, 6.283); g.fill(); }
+        if(p.k === 'txt'){ g.font = `bold ${p.big ? 14 : 12}px sans-serif`; g.fillStyle = p.c; g.lineWidth = 2; g.strokeStyle = '#fff'; g.strokeText(p.ch, p.x, p.y); g.fillText(p.ch, p.x, p.y); }
+        if(p.k === 'heart'){ g.fillStyle = '#FF4F8B'; heartPath(g, p.x, p.y, p.s); g.fill(); }
+        if(p.k === 'spark'){ g.globalAlpha *= Math.sin(p.life*Math.PI); sparkle(p.x, p.y, p.s, '#FFE14D'); }
+        if(p.k === 'bub'){ g.strokeStyle = '#E8F8FF'; g.lineWidth = .9; g.beginPath(); g.arc(p.x, p.y, 1.8, 0, 6.283); g.stroke(); }
+        if(p.k === 'drop'){ p.vy += .08; g.fillStyle = '#7FD3FF'; g.beginPath(); g.ellipse(p.x, p.y, 1.8, 2.6, 0, 0, 6.283); g.fill(); }
+        if(p.k === 'conf'){ p.r += .15; g.fillStyle = p.c; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillRect(-2, -1, 4, 2); g.restore(); }
+        if(p.k === 'pix'){ g.fillStyle = p.c; g.fillRect(p.x, p.y, 2.5, 2.5); }
+      }
+      g.restore();
+    }
+
+    // 通常ステージのキャラ（ポーズ＋動き）
+    function drawStageChar(t, mood){
+      const cat = moodToCat(mood);
+      if(S.npCat !== cat || (cat === 'idle' && t - S.npT > 3400) || S.np === null) choosePose(cat, t);
+      const set = STAGE_POSES[S.stg], img = sheetImg(set.sheet), tag = POSE_FX[set.sheet][S.np];
+      if(!(img.complete && img.naturalWidth)) return;
+      const pe = t - S.npT, beat = bgm.beat();
+      const sz = spriteSize(img, S.np, 118, 210);
+      let x = 160, bottom = 164, size = sz.h, rot = 0, scx = 1, scy = 1;
+      // ポーズ切り替え時は縮ませず、少しだけ膨らんで戻る
+      const pop = pe < 240 ? 1 + .05*Math.sin(pe/240*Math.PI) : 1;
+      // 共通：拍に合わせて軽く左右に揺れる（縦に潰す動きはしない）
+      rot = Math.sin(beat*Math.PI)*.035;
+      // ポーズごとの動き
+      if(tag === 'fire' || tag === 'kiai'){ x += (Math.random()-.5)*3; rot = 0; }
+      if(tag === 'speed'){ x += Math.max(0, 1 - pe/320)*170; rot = -.05; }
+      if(tag === 'zzz' || tag === 'chill' || tag === 'sway'){ rot = Math.sin(t/900)*.05; }
+      if(tag === 'bow'){ rot = Math.max(0, Math.sin(t/500))*.06; }
+      if(tag === 'game'){ bottom -= Math.abs(Math.sin(t/120))*1.5; }
+      if(tag === 'impact' || tag === 'confetti' || cat === 'happy'){ bottom -= Math.abs(Math.sin(t/150))*8; }
+      if(cat === 'sad'){ rot = Math.sin(t/1200)*.03; }
+      size *= pop;
+      const top = bottom - size;
+      // 背面の演出
+      if(tag === 'kiai'){ const k = Math.max(0, 1 - (t - S.kiaiT)/600); g.fillStyle = `rgba(255,30,30,${.12 + .25*k})`; g.fillRect(0,0,W,H); }
+      if(tag === 'game'){ g.save(); g.globalAlpha = .25 + .15*Math.sin(t/60); g.fillStyle = '#4FA8FF'; g.beginPath(); g.ellipse(x, bottom - size*.25, size*.45, size*.3, 0, 0, 6.283); g.fill(); g.restore(); }
+      if(tag === 'speed'){ g.save(); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.5;
+        for(let k=0;k<8;k++){ const y = top + 20 + k*12, len = 30 + (k*13 % 40); const ox = (t/3 + k*37) % 120; g.beginPath(); g.moveTo(x + 40 + ox, y); g.lineTo(x + 40 + ox + len, y); g.stroke(); } g.restore(); }
+      if(tag === 'impact'){ const k = (t % 600)/600; g.save(); g.strokeStyle = `rgba(255,225,77,${1 - k})`; g.lineWidth = 3;
+        for(let i=0;i<10;i++){ const a = i/10*6.283; g.beginPath(); g.moveTo(x + Math.cos(a)*(40 + k*30), top + size*.4 + Math.sin(a)*(30 + k*20)); g.lineTo(x + Math.cos(a)*(52 + k*30), top + size*.4 + Math.sin(a)*(40 + k*20)); g.stroke(); } g.restore(); }
+      // 本体
+      g.save(); g.translate(x, bottom); g.rotate(rot); g.scale(scx, scy);
+      const dw = sz.w*pop, dh = sz.h*pop;
+      g.drawImage(img, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -dw/2, -dh, dw, dh); g.restore();
+      // 前面の演出
+      if(tag === 'glint'){ const k = (t % 1600)/1600; if(k < .3){ g.save(); g.globalAlpha = 1 - k/.3; g.fillStyle = '#fff';
+        g.translate(x - 20 + k*140, top + size*.33); g.rotate(-.6); g.fillRect(-1.5, -14, 3, 28); g.restore(); sparkle(x - 20 + k*140, top + size*.33, 5, '#fff'); } }
+      if(tag === 'drink' && Math.floor(t/500) % 2 === 0){ g.save(); g.font = '900 11px "M PLUS 1p", sans-serif'; g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 3; g.textAlign = 'center';
+        g.strokeText('ゴクッ', x + size*.42, top + 14); g.fillText('ゴクッ', x + size*.42, top + 14); g.restore(); }
+      poseFx(tag, t, x, top, size);
+      drawPoseFx();
+    }
+    // 大当たり確定ステージ：金と赤の光の中で、おじいちゃんがガッツポーズ
+    function drawConfirmStage(t){
+      const bg = g.createRadialGradient(W/2, H*.7, 10, W/2, H*.6, 230);
+      bg.addColorStop(0, '#FFE58A'); bg.addColorStop(.35, '#FF8A1E'); bg.addColorStop(.7, '#C0102A'); bg.addColorStop(1, '#4a0010');
+      g.fillStyle = bg; g.fillRect(0,0,W,H);
+      // 回転する光の帯
+      g.save(); g.translate(W/2, H*.72); g.rotate(t/2600);
+      for(let i=0;i<18;i++){ g.rotate(Math.PI/9); g.fillStyle = i%2 ? 'rgba(255,255,255,.16)' : 'rgba(255,230,120,.12)'; g.beginPath(); g.moveTo(0,0); g.lineTo(260,-26); g.lineTo(260,26); g.fill(); }
+      g.restore();
+      // 左右のスポットライト
+      [[40, .5], [280, -.5]].forEach(([x, a]) => { g.save(); g.translate(x, 0); g.rotate(a*Math.sin(t/1400)*.5);
+        const sp = g.createLinearGradient(0,0,0,H); sp.addColorStop(0,'rgba(255,255,220,.5)'); sp.addColorStop(1,'rgba(255,255,220,0)');
+        g.fillStyle = sp; g.beginPath(); g.moveTo(-6,0); g.lineTo(6,0); g.lineTo(40,H); g.lineTo(-40,H); g.fill(); g.restore(); });
+      // 降り注ぐ金の粒
+      for(let k=0;k<26;k++){ const x = (k*47 + Math.sin(t/700 + k)*10) % W, y = ((t/12 + k*29) % (H + 20)) - 10;
+        g.globalAlpha = .8; sparkle(x, y, 2 + (k%3), k%2 ? '#FFF3B0' : '#FFD23A'); }
+      g.globalAlpha = 1;
+      // ステージの床
+      g.fillStyle = 'rgba(60,0,10,.6)'; g.fillRect(0, 140, W, 20);
+      g.fillStyle = '#F2C14E'; g.fillRect(0, 140, W, 2);
+      // おじいちゃん：ガッツポーズで弾む
+      if(OJII.complete && OJII.naturalWidth){
+        const h = 86, w = h * OJII.naturalWidth / OJII.naturalHeight;
+        const hop = Math.abs(Math.sin(t/180))*5, rot = Math.sin(t/360)*.06;
+        g.save(); g.translate(W/2, 158 - hop); g.rotate(rot);
+        g.shadowColor = 'rgba(255,240,180,.9)'; g.shadowBlur = 18;
+        g.drawImage(OJII, -w/2, -h, w, h); g.restore();
+      }
+      if(Math.random() < .15) hearts(1, true);
+    }
+
+    // ステージ切り替えのワイプ
+    function drawStageWipe(t){
+      const e = t - S.stageT, D = 900;
+      if(e < 0 || e > D) return;
+      const k = e/D, x = -W*.6 + k*W*2.2;
+      g.save();
+      g.fillStyle = S.stg === 3 ? '#C98A06' : S.stg === 2 ? '#6a2aff' : '#FF4F8B';
+      g.beginPath(); g.moveTo(x - 120, 0); g.lineTo(x + 40, 0); g.lineTo(x - 20, H); g.lineTo(x - 180, H); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x + 44, 0); g.lineTo(x + 56, 0); g.lineTo(x - 4, H); g.lineTo(x - 16, H); g.fill();
+      const a = Math.min(1, Math.min(e, D - e)/180);
+      g.globalAlpha = a; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 24px "M PLUS 1p", sans-serif';
+      g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = '#1a0020'; g.strokeText('STAGE CHANGE', W/2, H/2);
+      g.fillStyle = '#fff'; g.fillText('STAGE CHANGE', W/2, H/2);
+      g.restore();
+    }
+
+    // チャンスステージ：継続ジャッジ（残り5G）の煽りと結果
+    function drawCZJudge(t){
+      if(!S.cz || S.cz.left > 5) return;
+      const strong = S.czAori === 'strong';
+      g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
+      const pulse = 1 + .05*Math.sin(t/(strong ? 90 : 200));
+      g.translate(W/2, 30); g.scale(pulse, pulse);
+      const gr = g.createLinearGradient(-90, 0, 90, 0);
+      if(strong){ gr.addColorStop(0, '#FF2D2D'); gr.addColorStop(.5, '#FFB000'); gr.addColorStop(1, '#FF2D2D'); }
+      else { gr.addColorStop(0, '#2a3a9a'); gr.addColorStop(1, '#5a2aaa'); }
+      g.fillStyle = gr; rrPath(g, -92, -12, 184, 24, 12); g.fill();
+      g.lineWidth = 2; g.strokeStyle = strong ? '#FFF3B0' : '#9FB8FF'; g.stroke();
+      g.fillStyle = '#fff'; g.font = '900 11px "M PLUS 1p", sans-serif';
+      g.fillText(`継続ジャッジ　あと ${S.cz.left}G`, 0, 1);
+      g.restore();
+      // 煽りの文字（ゲーム開始時に出る）
+      const e = t - S.czAoriT;
+      if(e >= 0 && e < 1600){
+        const k = Math.min(1, e/200), out = e > 1300 ? (1600 - e)/300 : 1;
+        g.save(); g.globalAlpha = out; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.translate(W/2, 64); g.scale(.6 + .4*easeBack(k), .6 + .4*easeBack(k));
+        g.font = '900 20px "M PLUS 1p", sans-serif'; g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = strong ? '#5a0000' : '#0a1040';
+        const txt = strong ? pick2(['いける…！','流れキテる！','まだ終わらない！'], S.czAoriSeed) : pick2(['まだまだ…','どうなる…','ドキドキ…'], S.czAoriSeed);
+        g.strokeText(txt, 0, 0); g.fillStyle = strong ? '#FFE14D' : '#CFE0FF'; g.fillText(txt, 0, 0);
+        g.restore();
+        if(strong && Math.random() < .4) S.pfx.push({k:'fire', x:Math.random()*W, y:H, vx:0, vy:-2 - Math.random()*2, life:1, s:3 + Math.random()*4});
+      }
+    }
+    function drawCZResult(t){
+      const e = t - S.czResT;
+      if(e < 0 || e > 2000 || !S.czResOk) return;
+      const k = Math.min(1, e/220), out = e > 1700 ? (2000 - e)/300 : 1;
+      g.save(); g.globalAlpha = out;
+      g.fillStyle = 'rgba(90,0,60,.5)'; g.fillRect(0,0,W,H);
+      g.save(); g.translate(W/2, H/2); g.rotate(t/1200);
+      for(let i=0;i<16;i++){ g.rotate(Math.PI/8); g.fillStyle = i%2 ? 'rgba(255,225,77,.3)' : 'rgba(255,79,139,.25)'; g.beginPath(); g.moveTo(0,0); g.lineTo(220,-26); g.lineTo(220,26); g.fill(); }
+      g.restore();
+      g.translate(W/2, H/2); g.scale(.5 + .5*easeBack(k), .5 + .5*easeBack(k));
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.font = '900 34px "M PLUS 1p", sans-serif'; g.lineWidth = 8; g.strokeStyle = '#4a0020';
+      g.strokeText('継続!!', 0, -6); g.fillStyle = '#FFE14D'; g.fillText('継続!!', 0, -6);
+      g.font = '900 13px "M PLUS 1p", sans-serif'; g.lineWidth = 4; g.strokeText(`+${CZ_GAMES}G`, 0, 24); g.fillStyle = '#fff'; g.fillText(`+${CZ_GAMES}G`, 0, 24);
+      g.restore();
+    }
+    const pick2 = (a, seed) => a[seed % a.length];
+
+    // --- チャンスステージ ---
+    const POSE = {
+      idle:  [0, 2, 4, 6, 8, 11, 15],   // 決めポーズ・サングラス・後ろ姿など
+      happy: [1, 7, 13, 14, 3],         // 両手を広げる・笑顔・乾杯・ピース・歌う
+      love:  [5, 9],                    // ハート
+      sad:   [12],                      // 叫び・汗
+      look:  [10, 6]                    // 前のめり・振り返り
+    };
+    function setPose(kind){ const a = POSE[kind]; let p; do { p = pick(a); } while(a.length > 1 && p === S.pose); S.pose = p; S.poseT = performance.now(); }
+    function drawCZ(t){
+      // 背景：夜景をゆっくり左右にパン
+      if(CZ_BG.complete && CZ_BG.naturalWidth){
+        const bw = CZ_BG.naturalWidth * H / CZ_BG.naturalHeight;
+        const ox = (Math.sin(t/16000) * .5 + .5) * (bw - W);
+        g.drawImage(CZ_BG, -ox, 0, bw, H);
+      } else { g.fillStyle = '#1a2a8a'; g.fillRect(0,0,W,H); }
+      const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, 'rgba(10,0,40,.25)'); vg.addColorStop(.6, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(20,0,40,.45)');
+      g.fillStyle = vg; g.fillRect(0,0,W,H);
+      // 舞い上がる光
+      for(let k=0;k<14;k++){ const x = (k*53 + t/30) % W, y = H - ((t/18 + k*37) % H); g.globalAlpha = .5; g.fillStyle = k%2 ? '#FFE38A' : '#FFB3E6'; g.fillRect(x, y, 1.6, 1.6); }
+      g.globalAlpha = 1;
+      // キャラ（ポーズを切り替えながら弾む）
+      if(t - S.poseT > 2600 && S.mode !== 'spin') setPose('idle');
+      if(CZ_SPRITES.complete && CZ_SPRITES.naturalWidth){
+        const pe = t - S.poseT, pop = pe < 240 ? 1 + .05*Math.sin(pe/240*Math.PI) : 1;
+        const beat = t/1000*132/60, hop = Math.abs(Math.sin(beat*Math.PI))*3;
+        const sz = spriteSize(CZ_SPRITES, S.pose, 122, 210), dw = sz.w*pop, dh = sz.h*pop;
+        g.save(); g.translate(160, 162 - hop); g.rotate(Math.sin(beat*Math.PI)*.04);
+        g.drawImage(CZ_SPRITES, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -dw/2, -dh, dw, dh); g.restore();
+      }
+      // 残りゲーム数（継続ジャッジ中はジャッジ表示に切り替え）
+      if(S.cz && S.cz.left > 5){
+        g.save(); g.textBaseline = 'middle';
+        const gr = g.createLinearGradient(W - 96, 0, W - 6, 0); gr.addColorStop(0, '#FF2D78'); gr.addColorStop(1, '#9B5CFF');
+        g.fillStyle = gr; rrPath(g, W - 98, 23, 92, 16, 8); g.fill();
+        g.fillStyle = '#fff'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif'; g.textAlign = 'left'; g.fillText('CHANCE', W - 92, 31);
+        g.textAlign = 'right'; g.font = 'bold 10px "M PLUS 1p", sans-serif'; g.fillText(`残り${S.cz.left}G`, W - 10, 31);
+        g.restore();
+      }
+    }
+    // 突入・終了の告知
+    function drawCZBanner(t){
+      const ei = t - S.czT, eo = t - S.czEndT;
+      const e = Math.min(ei, eo), entering = ei <= eo, D = entering ? 1800 : 1400;
+      if(e < 0 || e > D) return;
+      const k = Math.min(1, e/220), out = e > D - 250 ? (D - e)/250 : 1;
+      g.save(); g.globalAlpha = out;
+      g.fillStyle = entering ? 'rgba(60,0,60,.55)' : 'rgba(0,0,30,.55)'; g.fillRect(0,0,W,H);
+      if(entering){ g.save(); g.translate(W/2, H/2); g.rotate(t/1500);
+        for(let i=0;i<16;i++){ g.rotate(Math.PI/8); g.fillStyle = i%2 ? 'rgba(255,215,90,.25)' : 'rgba(255,90,190,.2)'; g.beginPath(); g.moveTo(0,0); g.lineTo(220,-24); g.lineTo(220,24); g.fill(); }
+        g.restore(); }
+      g.translate(W/2, H/2); g.scale(.6 + .4*easeBack(k), .6 + .4*easeBack(k));
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.font = '900 13px "M PLUS 1p", sans-serif'; g.lineWidth = 4; g.strokeStyle = '#2a0030';
+      g.strokeText('CHANCE STAGE', 0, -22); g.fillStyle = '#FFE14D'; g.fillText('CHANCE STAGE', 0, -22);
+      g.font = '900 26px "M PLUS 1p", sans-serif'; g.lineWidth = 7;
+      const txt = entering ? 'チャンスステージ突入！' : 'チャンスステージ終了';
+      g.strokeText(txt, 0, 6); g.fillStyle = entering ? '#fff' : '#cfd8ff'; g.fillText(txt, 0, 6);
+      g.restore();
+    }
+
     // --- AT：イベント配信モード ---
     function drawAT(t){
       const sk = g.createLinearGradient(0,0,0,H);
@@ -1199,7 +1689,8 @@
       const hype = S.mode === 'spin' && S.scene !== 'walk';
       if(!S.tenpai && t > S.nextCom){
         S.nextCom = t + (hype ? rnd(350, 600) : rnd(1100, 2200));
-        comment(pick(hype ? TALK.hype : TALK.calm));
+        if(hype) comment(pick(TALK.hype));
+        else { const l = pick(CALM_LISTENERS); comment(l.text, [l.av, l.name]); }
       }
       if(t > S.nextHeart){ S.nextHeart = t + (hype ? 180 : rnd(700, 1400)); hearts(1); }
       S.viewers += (hype ? .6 : .02) * (Math.random() - .3);
@@ -1214,9 +1705,9 @@
       }
       if(S.at && S.mode !== 'big'){ drawAT(t); drawUI(t); if(S.cut) drawCutin(t); return; }
       if(S.mode === 'big'){
-        drawRoom(t);
-        drawFloor(); drawHero(t, 'jump'); drawMic();
-        g.fillStyle = 'rgba(30,0,30,.35)'; g.fillRect(0,0,W,H);
+        // 揃った瞬間は確定ステージ（おじいちゃん）の背景のまま祝う
+        drawConfirmStage(t);
+        g.fillStyle = 'rgba(30,0,30,.25)'; g.fillRect(0,0,W,H);
         drawFireworks(t);
         drawText(S.bigKey === 'S7' ? 'JACKPOT!!' : 'BIG WIN!', 58, 32, '#fff3b0');
         if(Math.random() < .08) comment(pick(TALK.win));
@@ -1224,8 +1715,10 @@
         drawUI(t); return;
       }
       if(S.tenpai){ drawTenpai(t); drawUI(t); if(S.cut) drawCutin(t); return; }
+      // 大当たり確定（図柄告知中）は専用ステージに固定
+      if(S.aim){ drawConfirmStage(t); drawUI(t); drawAimBanner(t); if(S.cut) drawCutin(t); return; }
 
-      drawRoom(t);
+      if(!S.cz) drawStageBg(t);
       const sc = S.scene;
       // キャラの表情
       let mood = (t - S.talkT) % 5200 < 1600 ? 'talk' : 'idle';
@@ -1233,11 +1726,14 @@
       if(S.mode === 'result' && S.result){
         const r = S.result;
         if(r.flag && r.hit && r.flag !== 'RPL') mood = 'happy';
-        if((sc === 'hokuto' || sc.startsWith('chest')) && !BIG.includes(r.flag) && !(r.flag && sc.startsWith('chest'))) mood = 'sad';
+        if(r.big) mood = 'happy';
+        else if((sc === 'hokuto' || sc.startsWith('chest')) && !(r.flag && sc.startsWith('chest'))) mood = 'sad';
       }
       if(t - S.shockT < 1500) mood = 'shock';
       if(t - S.jumpT < 900) mood = 'happy';
-      drawFloor(); drawHero(t, mood); drawMic();
+      if(S.cz) drawCZ(t);
+      else if(S.stg === 1){ drawFloor(); drawStageChar(t, mood); drawMic(); }
+      else drawStageChar(t, mood);
 
       if((sc === 'meteor' || sc === 'meteorGold') && S.mode === 'spin' && !S.burst && t - S.t0 > 200){
         S.burst = true; hearts(sc === 'meteorGold' ? 26 : 16, sc === 'meteorGold');
@@ -1249,10 +1745,20 @@
       drawGisi(t);
       drawUI(t);
       if(S.aim) drawAimBanner(t);
+      if(S.cz) drawCZJudge(t);
+      drawCZResult(t);
+      drawCZBanner(t);
+      if(!S.cz) drawStageWipe(t);
       if(S.cut) drawCutin(t);
-      if(S.mode === 'idle' && !S.aim && Math.floor(t/700) % 2) drawText('PRESS SPIN', 17, 11, '#fff', '#ff2d55');
+      if(S.mode === 'idle' && !S.aim && !S.cz && Math.floor(t/700) % 2) drawText('PRESS SPIN', 17, 11, '#fff', '#ff2d55');
     }
-    function loop(t){ if(!document.hidden) frame(t); requestAnimationFrame(loop); }
+    let lastErr = 0;
+    function loop(t){
+      requestAnimationFrame(loop);
+      if(document.hidden) return;
+      try { frame(t); }
+      catch(err){ if(t - lastErr > 5000){ console.error(err); lastErr = t; } g.restore(); g.globalAlpha = 1; }
+    }
 
     return {
       resize,
@@ -1263,6 +1769,7 @@
       atEnd(info){ Object.assign(S, {mode:'atEnd', at:null, endInfo:info}); },
       react(){ S.shockT = performance.now(); comment('えっ!?', pick(VIEWERS)); },
       start(scene){
+        if(S.cz) setPose(scene === 'walk' ? 'idle' : 'look');
         Object.assign(S, {mode:'spin', scene, t0:performance.now(), stage:0, result:null, tenpai:false, burst:false, gisi:0, cut:null,
           rankNow:RANKS[0], gifter:pick(VIEWERS), talkT:performance.now()});
         if(scene === 'meteor' || scene === 'meteorGold') setTimeout(() => sfx.meteor(scene === 'meteorGold'), 200);
@@ -1277,14 +1784,26 @@
       resolve(result){
         Object.assign(S, {mode:'result', result, resT:performance.now(), tenpai:false});
         if(S.scene.startsWith('chest')) sfx.chestOpen(!!result.flag);
-        if(S.scene === 'hokuto') (BIG.includes(result.flag) ? sfx.hokutoWin : sfx.hokutoFail)();
+        if(S.scene === 'hokuto') (result.big ? sfx.hokutoWin : sfx.hokutoFail)();
+        if(S.cz) setPose(result.hit && result.flag && result.flag !== 'RPL' ? (Math.random() < .3 ? 'love' : 'happy') : (S.scene !== 'walk' ? 'sad' : 'idle'));
         if(result.hit && result.flag && result.flag !== 'RPL'){ S.jumpT = performance.now(); hearts(6); comment(pick(TALK.win)); }
-        else if(S.scene !== 'walk' && !result.hit) comment(pick(TALK.lose));
+        else if(S.scene !== 'walk' && !result.hit){
+          // 期待させてハズレたときは辛口リスナーが反応することも
+          if(Math.random() < .5){ const l = pick(SALTY_LISTENERS); comment(l.text, [l.av, l.name]); } else comment(pick(TALK.lose));
+        }
       },
       big(key){ Object.assign(S, {mode:'big', bigKey:key, fireworks:[], nextFw:0, tenpai:false}); hearts(20, true); },
       idle(){ S.mode = 'idle'; S.scene = 'walk'; },
       get mode(){ return S.mode; },
       setAim(key){ S.aim = key; },
+      setLucky(on){ S.lucky = on; },
+      setCZ(cz){ S.cz = cz ? {...cz} : null; },
+      changeStage(n){ S.stg = n; S.stageT = performance.now(); S.np = null; comment('STAGE CHANGE!', pick(VIEWERS)); },
+      setStage(n){ S.stg = n; S.np = null; },
+      czAori(kind){ S.czAori = kind; S.czAoriT = performance.now(); S.czAoriSeed = Math.floor(Math.random()*99); setPose('look'); },
+      czResult(ok){ S.czResOk = ok; S.czResT = performance.now(); if(ok){ setPose('happy'); hearts(20, true); comment('継続きたー！', pick(VIEWERS)); } },
+      czStart(){ S.czT = performance.now(); setPose('happy'); comment('チャンスステージきた！', pick(VIEWERS)); },
+      czEnd(){ S.czEndT = performance.now(); },
       cutin(type){ S.cut = type; S.cutT = performance.now(); },
       gisi(step){
         S.gisi = step; S.gisiT = performance.now();
@@ -1317,7 +1836,6 @@
       if(active) return;
       title = opt.title || '激アツ';
       dpr = Math.min(2, window.devicePixelRatio || 1);
-      cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
       dur = reduceMotion ? 4000 : GEKI_DUR;
       lineNo = 0;
       lanes = LANE_Y.map((y, i) => ({y, items:[], speed:.24 + (i % 3)*.07, startAt:i*140}));
@@ -1329,7 +1847,12 @@
     }
     function stop(){ if(active){ t0 = performance.now() - dur + 300; } }
     function loop(t){
-      const e = t - t0, w = innerWidth, h = innerHeight, u = Math.min(w, h);
+      try { step(t); } catch(err){ console.error(err); active = false; cv.hidden = true; }
+    }
+    function step(t){
+      const r = cv.getBoundingClientRect(), w = r.width || innerWidth, h = r.height || innerHeight, u = Math.min(w, h);
+      if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+      const e = t - t0;
       c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
       const fade = e > dur - 300 ? Math.max(0, (dur - e)/300) : 1;
       c.globalAlpha = Math.min(1, e/120) * fade;
@@ -1424,6 +1947,205 @@
   })();
 
   // ================================================================
+  // 8-5. 大当たり確定の突入演出（全画面）：おじいちゃん背景に切り替わる前に入る
+  //      虹の流れ星が横切る → おじいちゃんが飛び込む → 「大当たり確定!!」
+  // ================================================================
+  const kakutei = (() => {
+    const cv = $('kakutei'), c = cv.getContext('2d');
+    let active = false, t0 = 0, dur = 2800, dpr = 1, key = 'S7', onEnd = null, stars = [];
+    const easeBack = x => 1 + 2.7*Math.pow(x-1,3) + 1.7*Math.pow(x-1,2);
+    const easeOut = x => 1 - Math.pow(1 - x, 3);
+    function start(k, cb){
+      if(active){ cb && cb(); return; }
+      key = k; onEnd = cb; dpr = Math.min(2, window.devicePixelRatio || 1);
+      dur = reduceMotion ? 1500 : 2800;
+      stars = Array.from({length:40}, () => ({x:Math.random(), y:Math.random(), s:1 + Math.random()*2.5, ph:Math.random()*6}));
+      active = true; t0 = performance.now(); cv.hidden = false;
+      sfx.kakutei();
+      requestAnimationFrame(loop);
+    }
+    function finish(){ if(!active) return; active = false; cv.hidden = true; const f = onEnd; onEnd = null; f && f(); }
+    function loop(t){
+      try { if(step(t)) requestAnimationFrame(loop); else finish(); }
+      catch(err){ console.error(err); finish(); }
+    }
+    function step(t){
+      const r = cv.getBoundingClientRect(), w = r.width || innerWidth, h = r.height || innerHeight, u = Math.min(w, h);
+      if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+      const e = t - t0;
+      c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+      const fadeIn = Math.min(1, e/150), fadeOut = e > dur - 300 ? Math.max(0, (dur - e)/300) : 1;
+      c.globalAlpha = fadeIn * fadeOut;
+      // 夜空から、金と赤の光へ変わる背景
+      const bg = c.createRadialGradient(w/2, h*.6, 0, w/2, h*.55, Math.max(w,h)*.8);
+      const warm = Math.min(1, Math.max(0, (e - 500)/400));
+      bg.addColorStop(0, warm ? `rgba(255,232,140,${warm})` : '#2a1a6a'); bg.addColorStop(.4, warm ? '#FF8A1E' : '#1a0a4a'); bg.addColorStop(1, '#2a0010');
+      c.fillStyle = '#0a0420'; c.fillRect(0,0,w,h);
+      c.fillStyle = bg; c.fillRect(0,0,w,h);
+      for(const s of stars){ c.fillStyle = `rgba(255,255,255,${.4 + .6*Math.abs(Math.sin(e/200 + s.ph))})`; c.fillRect(s.x*w, s.y*h, s.s, s.s); }
+      if(warm > 0){ c.save(); c.globalAlpha *= warm; c.translate(w/2, h*.6); c.rotate(e/2200);
+        for(let i=0;i<20;i++){ c.rotate(Math.PI/10); c.fillStyle = i%2 ? 'rgba(255,255,255,.18)' : 'rgba(255,215,90,.14)'; c.beginPath(); c.moveTo(0,0); c.lineTo(Math.max(w,h), -u*.08); c.lineTo(Math.max(w,h), u*.08); c.fill(); }
+        c.restore(); }
+      // 虹の流れ星が右上から左下へ横切る
+      const se = e/600;
+      if(se < 1.2){
+        const x = w*(1.1 - se*1.2), y = h*(.05 + se*.45), len = u*.55;
+        for(let i=0;i<7;i++){ c.strokeStyle = `hsla(${i*50},100%,65%,.75)`; c.lineWidth = u*.012; c.lineCap = 'round';
+          c.beginPath(); c.moveTo(x + i*u*.006, y - i*u*.004); c.lineTo(x + len + i*u*.006, y - len*.38 - i*u*.004); c.stroke(); }
+        c.save(); c.translate(x, y); c.rotate(e/120); c.fillStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 30;
+        c.beginPath(); for(let i=0;i<10;i++){ const rr = i%2 ? u*.025 : u*.06, a = -Math.PI/2 + i*Math.PI/5; c.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } c.closePath(); c.fill(); c.restore();
+      }
+      // おじいちゃんが飛び込む
+      const oe = e - 550;
+      if(oe > 0 && OJII.complete && OJII.naturalWidth){
+        const p = Math.min(1, oe/450), ih = u*.6*(.3 + .7*easeBack(p)), iw = ih * OJII.naturalWidth / OJII.naturalHeight;
+        const hop = Math.abs(Math.sin(oe/170))*u*.02;
+        c.save(); c.translate(w/2, h*.62 - hop); c.rotate(Math.sin(oe/300)*.05);
+        c.shadowColor = 'rgba(255,240,180,.95)'; c.shadowBlur = 36;
+        c.drawImage(OJII, -iw/2, -ih/2, iw, ih); c.restore();
+      }
+      // 「大当たり確定!!」
+      const te = e - 800;
+      if(te > 0){
+        const p = Math.min(1, te/240), sc = p < 1 ? 2.4 - 1.4*easeOut(p) : 1 + .035*Math.sin(te/80);
+        let fs = Math.min(w*.14, 84); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const tw = c.measureText('大当たり確定!!').width; if(tw > w*.94) fs *= w*.94/tw;
+        c.save(); c.translate(w/2, h*.16); c.scale(sc, sc); c.rotate(-.04);
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
+        for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
+        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('大当たり確定!!', 0, 0);
+        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('大当たり確定!!', 0, 0);
+        c.fillStyle = gr; c.fillText('大当たり確定!!', 0, 0);
+        c.restore();
+        // 狙う図柄
+        const ae = te - 400;
+        if(ae > 0){
+          const a = Math.min(1, ae/200), afs = Math.min(w*.075, 40);
+          c.save(); c.globalAlpha *= a; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+          c.font = `900 ${afs}px "M PLUS 1p", sans-serif`;
+          const txt = key === 'S7' ? '777を狙え！！' : 'BAR・BAR・BARを狙え！！';
+          c.lineWidth = afs*.28; c.strokeStyle = '#2a0010'; c.strokeText(txt, w/2, h*.92);
+          c.fillStyle = Math.floor(e/250) % 2 ? '#FFE14D' : '#fff'; c.fillText(txt, w/2, h*.92);
+          c.restore();
+        }
+      }
+      // 最初の白フラッシュ
+      if(e < 160){ c.globalAlpha = 1 - e/160; c.fillStyle = '#fff'; c.fillRect(0,0,w,h); }
+      c.globalAlpha = 1;
+      return e < dur;
+    }
+    cv.addEventListener('click', () => { if(active) t0 = Math.min(t0, performance.now() - dur + 250); });
+    return {start, get active(){ return active; }};
+  })();
+
+  // ================================================================
+  // 8-4. ボーナスステージ突入演出（全画面）
+  //      幕が開く → 光の中からボーナスキャラが飛び出す → 「BONUS STAGE」
+  // ================================================================
+  const bonusIn = (() => {
+    const cv = $('bonusIn'), c = cv.getContext('2d');
+    let active = false, t0 = 0, dur = 3600, dpr = 1, info = null, onEnd = null, conf = [];
+    const easeBack = x => 1 + 2.7*Math.pow(x-1,3) + 1.7*Math.pow(x-1,2);
+    const easeOut = x => 1 - Math.pow(1 - x, 3);
+    function start(opt, cb){
+      if(active){ cb && cb(); return; }
+      info = opt; onEnd = cb; dpr = Math.min(2, window.devicePixelRatio || 1);
+      dur = reduceMotion ? 1800 : 3600;
+      conf = Array.from({length:90}, () => ({x:Math.random(), y:-Math.random()*.6, v:.12 + Math.random()*.18, r:Math.random()*6, vr:(Math.random()-.5)*.3,
+        c:['#FF4F8B','#FFE14D','#4FF3FF','#9B5CFF','#5DFFB0','#fff'][Math.floor(Math.random()*6)], s:4 + Math.random()*5}));
+      active = true; t0 = performance.now(); cv.hidden = false;
+      sfx.bonusIn();
+      requestAnimationFrame(loop);
+    }
+    function finish(){ if(!active) return; active = false; cv.hidden = true; const f = onEnd; onEnd = null; f && f(); }
+    function loop(t){
+      try { if(step(t)) requestAnimationFrame(loop); else finish(); }
+      catch(err){ console.error(err); finish(); }
+    }
+    function step(t){
+      const r = cv.getBoundingClientRect(), w = r.width || innerWidth, h = r.height || innerHeight, u = Math.min(w, h);
+      if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+      const e = t - t0, k = dur === 3600 ? 1 : .5;
+      c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+      const fadeOut = e > dur - 350 ? Math.max(0, (dur - e)/350) : 1;
+      c.globalAlpha = fadeOut;
+      // 背景：金と虹の光
+      const bg = c.createRadialGradient(w/2, h*.5, 0, w/2, h*.5, Math.max(w,h)*.8);
+      bg.addColorStop(0, '#FFF6C8'); bg.addColorStop(.3, '#FFB43A'); bg.addColorStop(.65, '#E0185A'); bg.addColorStop(1, '#3A0A5A');
+      c.fillStyle = bg; c.fillRect(0,0,w,h);
+      c.save(); c.translate(w/2, h*.5); c.rotate(e/1800);
+      for(let i=0;i<24;i++){ c.rotate(Math.PI/12); c.fillStyle = `hsla(${(i*30 + e/6) % 360},100%,70%,.22)`;
+        c.beginPath(); c.moveTo(0,0); c.lineTo(Math.max(w,h), -u*.09); c.lineTo(Math.max(w,h), u*.09); c.fill(); }
+      c.restore();
+      // ボーナスキャラが下から飛び出す
+      const ce = Math.max(0, e - 700*k);
+      if(ce > 0 && HEROINE.complete && HEROINE.naturalWidth){
+        const p = Math.min(1, ce/550), ih = u*.62*(.4 + .6*easeBack(p)), iw = ih * HEROINE.naturalWidth / HEROINE.naturalHeight;
+        const y = h*.62 + (1 - easeOut(p))*h*.5 - Math.abs(Math.sin(ce/220))*u*.015;
+        c.save(); c.translate(w/2, y); c.rotate(Math.sin(ce/400)*.04);
+        c.shadowColor = 'rgba(255,240,200,.95)'; c.shadowBlur = 40;
+        c.drawImage(HEROINE, -iw/2, -ih/2, iw, ih); c.restore();
+      }
+      // 紙吹雪
+      if(e > 600*k) for(const p of conf){ p.y += p.v*.016; p.r += p.vr;
+        c.save(); c.translate(p.x*w, p.y*h); c.rotate(p.r); c.fillStyle = p.c; c.fillRect(-p.s/2, -p.s/4, p.s, p.s/2); c.restore(); }
+      // 文字：BONUS STAGE と目標枚数
+      const te = e - 1000*k;
+      if(te > 0){
+        const p = Math.min(1, te/260), sc = p < 1 ? 2.2 - 1.2*easeOut(p) : 1 + .03*Math.sin(te/90);
+        let fs = Math.min(w*.16, 96); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const tw = c.measureText('BONUS STAGE').width; if(tw > w*.92) fs *= w*.92/tw;
+        c.save(); c.translate(w/2, h*.17); c.scale(sc, sc); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+        c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const gr = c.createLinearGradient(0, -fs/2, 0, fs/2);
+        gr.addColorStop(0, '#FFFBE6'); gr.addColorStop(.45, '#FFD23A'); gr.addColorStop(.55, '#E08A00'); gr.addColorStop(1, '#FFE9A0');
+        c.lineWidth = fs*.2; c.strokeStyle = '#4a0030'; c.strokeText('BONUS STAGE', 0, 0);
+        c.lineWidth = fs*.09; c.strokeStyle = '#FF2D78'; c.strokeText('BONUS STAGE', 0, 0);
+        c.shadowColor = '#FFD23A'; c.shadowBlur = 24; c.fillStyle = gr; c.fillText('BONUS STAGE', 0, 0);
+        c.restore();
+        // サブタイトルと目標枚数
+        const se = te - 350;
+        if(se > 0){
+          const sa = Math.min(1, se/250), sfs = Math.min(w*.065, 34);
+          c.save(); c.globalAlpha *= sa; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+          c.font = `900 ${sfs}px "M PLUS 1p", sans-serif`;
+          c.lineWidth = sfs*.25; c.strokeStyle = '#3a0030'; c.strokeText('イベント配信スタート！', w/2, h*.27);
+          c.fillStyle = '#fff'; c.fillText('イベント配信スタート！', w/2, h*.27);
+          // 目標枚数のバッジ
+          const bw = Math.min(w*.7, 360), bh = sfs*1.7, by = h*.88;
+          c.fillStyle = info.type === 'S7' ? '#D8192F' : '#161616'; c.strokeStyle = '#F2C14E'; c.lineWidth = 4;
+          c.beginPath(); c.roundRect ? c.roundRect(w/2 - bw/2, by - bh/2, bw, bh, bh/2) : c.rect(w/2 - bw/2, by - bh/2, bw, bh); c.fill(); c.stroke();
+          c.fillStyle = '#FFF3B0'; c.font = `900 ${sfs*.95}px "M PLUS 1p", sans-serif`;
+          c.fillText(`${info.type === 'S7' ? '7' : 'BAR'} AT ／ ${info.goal}枚まで`, w/2, by + 1);
+          c.restore();
+        }
+      }
+      // 幕（最初は閉じていて、左右に開く）
+      const op = easeOut(Math.min(1, Math.max(0, (e - 150*k)/(650*k))));
+      if(op < 1){
+        const cw = w/2 * (1 - op);
+        [[0, 1], [w, -1]].forEach(([x0, dir]) => {
+          c.save(); c.translate(x0, 0); c.scale(dir, 1);
+          const cg = c.createLinearGradient(0,0,cw,0); cg.addColorStop(0, '#5a0010'); cg.addColorStop(1, '#c0102a');
+          c.fillStyle = cg; c.fillRect(0, 0, cw + 2, h);
+          c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 6;
+          for(let x = 18; x < cw; x += 26){ c.beginPath(); c.moveTo(x, 0); c.lineTo(x + Math.sin(e/200 + x)*4, h); c.stroke(); }
+          c.fillStyle = '#F2C14E'; c.fillRect(cw - 4, 0, 6, h);
+          c.restore();
+        });
+      }
+      // 開く瞬間の白フラッシュ
+      const fl = e - 650*k;
+      if(fl > 0 && fl < 260){ c.globalAlpha = (1 - fl/260) * fadeOut; c.fillStyle = '#fff'; c.fillRect(0,0,w,h); }
+      c.globalAlpha = 1;
+      return e < dur;
+    }
+    cv.addEventListener('click', () => { if(active) t0 = Math.min(t0, performance.now() - dur + 300); });
+    return {start, get active(){ return active; }};
+  })();
+
+  // ================================================================
   // 9. 画面全体のエフェクト（コイン・紙吹雪）
   // ================================================================
   const fxCanvas = $('fx'), g2 = fxCanvas.getContext('2d');
@@ -1449,6 +2171,9 @@
     if(!fxRunning){ fxRunning = true; requestAnimationFrame(fxLoop); }
   }
   function fxLoop(){
+    try { fxStep(); } catch(err){ console.error(err); parts = []; fxRunning = false; }
+  }
+  function fxStep(){
     g2.setTransform(dpr,0,0,dpr,0,0);
     g2.clearRect(0,0,innerWidth,innerHeight);
     parts = parts.filter(p => p.y < innerHeight + 40 && p.life < 600);
@@ -1479,19 +2204,27 @@
     clearTimeout(party.t); party.t = setTimeout(() => { if(!state.at) $('topper').classList.remove('party'); }, ms);
   }
 
-  // LUCKY!ランプ（点灯したら7・BAR確定）
+  // 大当たり確定の告知：看板の流れ星が虹色に点灯し、液晶の視聴者数が「7777」（虹色）に固定される
   function setPeka(on){
     state.peka = on;
-    $('peka').classList.toggle('lit', on);
-    $('peka').setAttribute('aria-label', on ? '当選ランプ 点灯' : '当選ランプ 消灯');
+    const st = $('shooting');
+    st.classList.toggle('lit', on);
+    st.setAttribute('aria-label', on ? '流れ星 点灯（大当たり確定）' : '流れ星 消灯');
+    screen.setLucky(on);
   }
   function pekaOn(type){
     state.pekaType = type;
     setPeka(true); sfx.gako(); screen.react();
-    const key = BIG.includes(state.flag) ? state.flag : state.carry;
-    if(key){ screen.setAim(key); setTimeout(() => { if(state.peka) setMsg(`${key === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！`); }, 50); }
-    setMsg('7かBARを狙え！');
+    const key = state.dupBig || (BIG.includes(state.flag) ? state.flag : state.carry) || 'S7';
+    setMsg('大当たり確定!!');
+    // 回転中（先ペカ）は、演出が終わるまでSTOPを受け付けない
+    if(state.phase === 'spinning') state.lockUntil = Math.max(state.lockUntil || 0, performance.now() + 60000);
     updateUI();
+    kakutei.start(key, () => {
+      if(state.peka){ screen.setAim(key); setMsg(`${key === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！`); }
+      if(state.phase === 'spinning') state.lockUntil = performance.now() + 150;
+      setTimeout(updateUI, 200);
+    });
   }
 
   // 7テンパイ：2つのリールが止まり、有効ライン上に7が2つ並んだ状態
@@ -1618,10 +2351,35 @@
     state.games++;
 
     const dbg = debugSettings();
+    forceStage = false;
 
     // --- 内部抽選（デバッグで固定されていればそれを使う。AT中はAT用テーブル）---
-    const auto = state.at ? lottery(AT_TABLE) : (state.carry || lottery());
+    const auto = state.at ? lottery(AT_TABLE) : (state.carry || lottery(state.cz ? czTable() : TABLE));
+    state.czGame = !!state.cz && !state.at;  // このゲームがチャンスステージ中か
     state.flag = dbg.flag !== undefined ? dbg.flag : auto;
+    // 小役の重複当選（7・BAR）。当たったら次ゲームに持ち越して揃える
+    state.dupBig = null;
+    if(!state.at && !state.carry && DUP[state.flag]){
+      const on = dbg.dup ? dbg.dup === 'on' : Math.random() < DUP[state.flag];
+      if(on){ const st = SETTINGS[state.setting]; state.dupBig = Math.random() < st.S7/(st.S7 + st.BAR) ? 'S7' : 'BAR'; }
+    }
+    const hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
+    // 通常ステージのステージチェンジ（アツいほど起きやすく、7・BAR当選時はステージ3に行きやすい）
+    if(!state.at && !state.cz && !state.peka){
+      state.stageCount = (state.stageCount || 0) + 1;
+      if(!state.stageLimit) state.stageLimit = 30 + Math.floor(Math.random()*21);   // 30〜50Gのどこかで強制移行
+      const rate = dbg.stage ? 1 : isBig(hot) ? .12 : ['WML','BEL','CHEM'].includes(hot) ? .06 : .03;
+      if(state.stageCount >= state.stageLimit || Math.random() < rate){
+        state.stageCount = 0; state.stageLimit = 30 + Math.floor(Math.random()*21);
+        const next = isBig(hot) && Math.random() < .6 && state.stage !== 3 ? 3 : pick([1,2,3].filter(n => n !== state.stage));
+        state.stage = next; screen.changeStage(next); sfx.stage();
+      }
+    }
+    // チャンスステージの継続ジャッジ中は、ゲーム開始時に煽り
+    if(state.cz && !state.at && state.cz.left <= 5 && state.cz.cont !== null){
+      const strong = state.cz.cont ? Math.random() < .6 : Math.random() < .2;
+      screen.czAori(strong ? 'strong' : 'weak'); (strong ? sfx.czStrong : sfx.czWeak)();
+    }
     // 押し順ぶどうは、最初に押したリールが決まるまで制御上の役が未定
     state.navi = NAVI[state.flag] || null;
     state.ctrlFlag = state.navi ? undefined : state.flag;
@@ -1632,14 +2390,14 @@
       if(state.navi) setTimeout(sfx.navi, 150);
     } else {
       // --- 液晶演出の抽選（ランプ点灯中は通常演出）---
-      state.scene = dbg.scene || (state.peka ? 'walk' : pickScene(state.flag));
+      state.scene = dbg.scene || (state.peka ? 'walk' : pickScene(hot));
       screen.start(state.scene);
     }
     // --- 激アツ演出の抽選（通常時のみ）---
-    state.geki = !state.at && !state.peka && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(state.flag));
+    state.geki = !state.at && !state.peka && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
     // --- カットイン・擬似連の抽選（通常時のみ）---
-    state.cutin = state.at ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(state.flag));
-    state.gisi = state.at || state.peka ? 0 : (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(state.flag));
+    state.cutin = state.at ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
+    state.gisi = state.at || state.peka ? 0 : (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
     state.gisiDone = 0;
     if(state.gisi === 5) state.geki = false; // ⑤で全画面の激アツが出るので第2停止の激アツは出さない
     // カットインがあるときは、見終わってから擬似連を始める
@@ -1652,7 +2410,7 @@
 
     // --- ランプ（先ペカ／後ペカ）の抽選 ---
     state.postPeka = false;
-    if(BIG.includes(state.flag) && !state.peka && !state.at){
+    if(isBig(hot) && !state.peka && !state.at){
       const pre = dbg.peka ? dbg.peka === 'pre' : Math.random() < PRE_PEKA;
       if(pre) setTimeout(() => pekaOn('先ペカ'), 120);
       else state.postPeka = true;
@@ -1664,7 +2422,7 @@
     updateMap();
     state.startTs = state.lastTs = performance.now();
     setMsg(state.at ? ''
-      : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : 'STOPで止めよう');
+      : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : state.cz ? `チャンスステージ 残り${state.cz.left}G` : 'STOPで止めよう');
     if(!wasReplay) sfx.coin();
     sfx.lever();
     save(); updateUI();
@@ -1704,7 +2462,7 @@
     lastAct = performance.now();
     // 第2停止で激アツ演出
     const pressed = reels.filter(x => x.stopping || !x.spinning).length;
-    if(pressed === 2 && state.geki){ state.geki = false; geki.start(); }
+    if(pressed === 2 && state.geki){ state.geki = false; if(!state.peka) geki.start(); }
     // 3つ目のSTOPを押した瞬間に後ペカ
     const last = reels.every(x => x.stopping || !x.spinning);
     // 第3停止：カットイン
@@ -1727,7 +2485,7 @@
           reels.forEach(r => { r.p = mod(Math.round(r.p), N); render(r); });
           screen.gisi(k); sfx.gisi(k); setTimeout(sfx.ooi, 120);
           const w = document.querySelector('.window'); w.classList.remove('gshake'); void w.offsetWidth; w.classList.add('gshake');
-          if(k === 5) setTimeout(() => geki.start({title:'追いメガポコナイト〜🔥'}), GISI5_HOLD);
+          if(k === 5) setTimeout(() => { if(!state.peka) geki.start({title:'追いメガポコナイト〜🔥'}); }, GISI5_HOLD);
         }
       } else v = SPEED * Math.min(1, (ts - b - GISI_FREEZE) / 250);
     }
@@ -1756,6 +2514,8 @@
     const hit = wins.some(w => w.key === flag);
 
     if(!state.at) state.carry = (CARRY_OVER.includes(flag) && !hit) ? flag : null;
+    const dupHit = !state.at && !!state.dupBig;
+    if(dupHit) state.carry = state.dupBig;   // 重複当選：次ゲームで7・BARを狙う
     const navi = state.navi; state.navi = null;
 
     const wasTenpai = endTenpai();
@@ -1784,6 +2544,15 @@
       screen.setAT(state.at);
       screen.big(flag);
       showBigWin(flag);
+      // お祝い（約3秒）が終わったら、そのままボーナスステージ（AT画面）へ
+      // お祝いのあと、全画面の突入演出をはさんでボーナスステージ（AT画面）へ
+      setTimeout(() => {
+        if(!(state.at && state.phase !== 'spinning' && screen.mode === 'big')) return;
+        hideBigWin();
+        bonusIn.start({type:state.at.type, goal:state.at.goal}, () => {
+          if(state.at && state.phase !== 'spinning'){ screen.startAT(null); screen.resultAT(0); setMsg(`ボーナスステージ！ ${state.at.goal}枚まで`); }
+        });
+      }, 3000);
       setMsg(`${SYM[flag].name}揃い！ AT突入（${AT_GOAL[flag]}枚まで）`);
       $('topper').classList.add('party');
     } else if(state.at){
@@ -1797,7 +2566,7 @@
       if(state.at.paid >= state.at.goal){ endAT(); state.skipQueued = false; $('skipBtn').classList.remove('queued'); $('skipBtn').textContent = 'SKIP ▶▶'; }
       else if(state.skipQueued) setTimeout(skipAT, 500);
     } else {
-      screen.resolve({flag, hit});
+      screen.resolve({flag, hit, big: dupHit || BIG.includes(flag), bigKey: dupHit ? state.dupBig : (BIG.includes(flag) ? flag : null)});
       if(wasTenpai){ sfx.tenpaiFail(); }
       if(wins.length === 0){
         setMsg(state.peka ? `${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : 'はずれ。SPINでもう一回');
@@ -1810,11 +2579,54 @@
       } else {
         setMsg(`${SYM[wins[0].key].name}　${total}枚獲得`);
         sfx.smallWin();
-        if(flag === 'CHE') spawn(8, 'coin', windowCenter());
+        if(flag === 'CHE' || flag === 'CHEM') spawn(8, 'coin', windowCenter());
       }
       if(total > 0) startCount(total, false);
+      // --- チャンスステージの消化と突入 ---
+      if(state.czGame && state.cz){
+        if(BIG.includes(flag) || dupHit) endCZ(true);       // 7・BAR当選でチャンスステージ終了（ボーナスへ）
+        else czStep();
+      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && CZIN[flag]){
+        // 小役で7・BARの抽選に外れたとき、チャンスステージへの移行を抽選
+        if(debugSettings().czIn === 'on' || Math.random() < CZIN[flag]) setTimeout(enterCZ, 700);
+      }
     }
+    if(bigHit && state.cz) endCZ(true);
+    state.dupBig = null;
     save(); updateUI();
+  }
+
+  // チャンスステージ
+  function enterCZ(){
+    if(state.at || state.cz || state.phase === 'spinning') return;
+    state.cz = {left:CZ_GAMES, played:0, set:1, cont:null};
+    screen.setCZ(state.cz); screen.czStart(); sfx.czIn();
+    setMsg(`チャンスステージ突入！ ${CZ_GAMES}ゲーム`);
+    save(); updateUI();
+  }
+  function endCZ(win, reason = ''){
+    state.cz = null; screen.setCZ(null);
+    if(!win){ screen.czEnd(); sfx.czEnd(); setTimeout(() => { if(!state.at && state.phase !== 'spinning') setMsg(`チャンスステージ終了${reason}`); }, 300); }
+  }
+  // チャンスステージを1ゲーム進める。残り5Gで継続を抽選し、最終ゲームで結果を出す
+  function czStep(){
+    const cz = state.cz;
+    cz.left--; cz.played = (cz.played || 0) + 1;
+    if(cz.cont === undefined) cz.cont = null;
+    if(cz.left === 5 && cz.cont === null){
+      const forced = debugSettings().czCont;
+      cz.cont = cz.played + 5 < CZ_MAX && (forced ? forced === 'on' : Math.random() < CZ_CONT);
+      screen.setCZ(cz); sfx.czJudge();
+    }
+    if(cz.left <= 0){
+      if(cz.cont){
+        cz.left = CZ_GAMES; cz.cont = null; cz.set = (cz.set || 1) + 1;
+        screen.setCZ(cz); screen.czResult(true); sfx.czCont();
+        setMsg(`チャンスステージ継続！ +${CZ_GAMES}G（${cz.set}セット目）`);
+      } else {
+        endCZ(false, cz.played >= CZ_MAX ? `（${CZ_MAX}G到達）` : '');
+      }
+    } else screen.setCZ(cz);
   }
 
   // ================================================================
@@ -1827,10 +2639,13 @@
     autoOn = on;
     $('autoBtn').setAttribute('aria-pressed', String(on));
   }
-  document.addEventListener('pointerdown', () => { audio.init(); if(audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume(); }, {once:true});
+  const wakeAudio = () => { audio.init(); if(audio.ctx && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {}); };
+  document.addEventListener('pointerdown', wakeAudio);
+  document.addEventListener('keydown', wakeAudio);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && audio.ctx && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {}); });
   $('autoBtn').addEventListener('click', () => { audio.init(); setAuto(!autoOn); if(autoOn) setMsg('オートプレイ中'); });
   setInterval(() => {
-    if(!autoOn || !state.ready || geki.active || !$('bigwin').hidden) return;
+    if(!autoOn || !state.ready || geki.active || bonusIn.active || kakutei.active || !$('bigwin').hidden) return;
     const now = performance.now();
     if(state.peka && !state.at){ setAuto(false); setMsg('ランプ点灯！ オートを止めました。液晶の図柄を狙おう'); return; }
     if(state.phase === 'idle'){
@@ -1892,6 +2707,9 @@
     const normal = state.sound && state.bgm && audio.ctx && !state.at && !state.tenpai && !geki.active
       && $('bigwin').hidden && !['big','atEnd'].includes(screen.mode);
     if(normal) bgm.start(); else bgm.stop();
+    // ボーナスゲーム中（突入演出のあと、AT画面になってから終了まで）は専用BGM
+    const bonus = state.sound && state.bgm && audio.ctx && state.at && !bonusIn.active && screen.mode !== 'big';
+    if(bonus) bonusBgm.start(); else bonusBgm.stop();
     $('skipBtn').hidden = !state.at;
   }, 200);
 
@@ -1909,8 +2727,12 @@
   function debugSettings(){
     if($('debug').hidden) return {};
     const f = $('fFlag').value, s = $('fScene').value, p = $('fPeka').value, a = $('fAim').value, k = $('fGeki').value;
-    const cu = $('fCut').value, gs = $('fGisi').value;
+    const cu = $('fCut').value, gs = $('fGisi').value, du = $('fDup').value, cz = $('fCz').value;
     return {
+      dup: du === 'auto' ? null : du,
+      czIn: cz === 'on' ? 'on' : null,
+      czCont: cz === 'auto' ? null : cz,
+      stage: forceStage,
       cut: cu === 'auto' ? null : cu,
       gisi: gs === 'auto' ? null : +gs,
       geki: k === 'auto' ? null : k,
@@ -1923,6 +2745,7 @@
 
   function debugAT(type){
     if(state.phase === 'spinning') return;
+    if(state.cz) endCZ(true);
     state.at = {type, goal:AT_GOAL[type], paid:0};
     setPeka(false); state.carry = null; screen.setAim(null);
     screen.setAT(state.at); screen.startAT(null); screen.resultAT(0);
@@ -1930,6 +2753,9 @@
     setMsg(`デバッグ：AT開始（${AT_GOAL[type]}枚まで）`); save(); updateUI();
   }
   $('atS7').addEventListener('click', () => debugAT('S7'));
+  $('czBtn').addEventListener('click', () => { audio.init(); enterCZ(); });
+  let forceStage = false;
+  $('stageBtn').addEventListener('click', () => { forceStage = true; setMsg('次のゲームでステージが変わります'); });
   $('gekiPrev').addEventListener('click', () => { audio.init(); geki.start(); });
   $('cutPrev').addEventListener('click', () => { audio.init(); const c = $('fCut').value; const type = ['green','red','rainbow'].includes(c) ? c : 'rainbow'; screen.cutin(type); sfx.cutin(type); });
   $('atBAR').addEventListener('click', () => debugAT('BAR'));
@@ -1966,6 +2792,7 @@
     if(state.phase === 'spinning') return;
     finishCount(); hideBigWin();
     if(state.at){ state.at = null; screen.setAT(null); $('topper').classList.remove('party'); }
+    if(state.cz){ state.cz = null; screen.setCZ(null); }
     Object.assign(state, {credits:100, games:0, coinIn:0, coinOut:0, carry:null, payout:0, replay:false, flag:null, scene:null, postPeka:false, pekaType:'-'});
     reels.forEach(r => r.slide = null);
     setPeka(false); screen.idle(); screen.setAim(null);
@@ -1992,6 +2819,8 @@
   window.addEventListener('resize', measure);
 
   if(state.peka){ state.pekaType = '持ち越し'; setPeka(true); if(state.carry) screen.setAim(state.carry); }
+  if(state.cz && !state.at){ state.cz = {left:state.cz.left, played:state.cz.played || 0, set:state.cz.set || 1, cont:state.cz.cont ?? null}; screen.setCZ(state.cz); }
+  screen.setStage(state.stage);
   if(state.at){ screen.setAT(state.at); screen.startAT(null); screen.resultAT(0); $('topper').classList.add('party'); }
   syncSound(); screen.run(); measure(); updateMap();
   if(document.fonts) document.fonts.ready.then(measure);

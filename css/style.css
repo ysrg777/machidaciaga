@@ -39,6 +39,15 @@ body{margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);
 .topper.party .bulb{animation-duration:.2s}
 .topper.party .bulbs{animation:hue 1s linear infinite}
 @keyframes hue{to{filter:hue-rotate(360deg)}}
+.shooting{position:absolute;right:16px;bottom:12px;width:68px;height:32px;pointer-events:none}
+.shooting .tail path{stroke:rgba(0,0,0,.35);stroke-linecap:round;fill:none}
+.shooting .star{fill:rgba(0,0,0,.4);stroke:rgba(0,0,0,.45);stroke-width:1.5;stroke-linejoin:round}
+.shooting.lit .tail path{stroke:url(#tail)}
+.shooting.lit .star{fill:url(#rbw);stroke:#fff}
+.shooting.lit{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px #ff7ad9);animation:shootHue 1.2s linear infinite, shootPop .5s ease-out}
+@keyframes shootHue{to{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px #ff7ad9) hue-rotate(360deg)}}
+@keyframes shootPop{0%{transform:scale(.4) translateX(30px);opacity:0}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.shooting.lit{animation:none}}
 .title{margin:0;font-family:"Rampart One",var(--sans);font-weight:400;font-size:clamp(1.55rem,8.4vw,2.3rem);line-height:1.05;letter-spacing:.06em;
   background:linear-gradient(#fffbe6,#ffd766 45%,#c88a1c 55%,#ffe9a0);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 3px 0 #5a0a14) drop-shadow(0 0 12px rgba(255,200,80,.45))}
@@ -91,7 +100,7 @@ body{margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);
   font-size:.95rem;color:var(--gold-hi);background:#000;border:1px solid #3a2a10;border-radius:6px;padding:4px 8px;margin-bottom:12px;
   text-shadow:0 0 6px rgba(255,210,100,.5)}
 
-.ctrl{display:flex;align-items:center;gap:10px}
+.ctrl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px}
 .peka{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:2px;height:84px;border-radius:16px;
   background:#1a0306;border:2px solid #4A2A10;box-shadow:inset 0 0 14px #000}
 .peka svg{width:46px;height:46px;flex:none}
@@ -161,9 +170,13 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 .keys{font-size:.75rem;color:var(--muted);margin-top:8px}
 
 /* 大当たり演出 */
-#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
-#gekiatsu{position:fixed;inset:0;width:100%;height:100%;z-index:45;cursor:pointer}
+#fx{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;pointer-events:none;z-index:40}
+#gekiatsu{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:45;cursor:pointer}
 #gekiatsu[hidden]{display:none}
+#bonusIn{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:46;cursor:pointer}
+#bonusIn[hidden]{display:none}
+#kakutei{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:47;cursor:pointer}
+#kakutei[hidden]{display:none}
 .auto{flex:none;width:58px;height:58px;border-radius:50%;cursor:pointer;border:3px solid #6A4A1A;
   background:radial-gradient(circle at 40% 30%,#3a1420,#1a0306);color:var(--muted);font:400 .8rem var(--vegas);letter-spacing:.05em}
 .auto[aria-pressed="true"]{background:radial-gradient(circle at 40% 30%,#b8fbff,#1aa7c0 60%,#0a5a6a);color:#00262e;border-color:#e6ffff;
