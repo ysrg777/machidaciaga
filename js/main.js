@@ -299,9 +299,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030235', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030235', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030235', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030253', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030253', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030253', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -476,6 +476,7 @@
     czWeak(){ audio.tone(220,0,.3,{type:'triangle',vol:.08}); audio.tone(262,.15,.3,{type:'triangle',vol:.06}); },
     czStrong(){ audio.noise(0,.2,.3,800); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.05 + k*.06,.2,{type:'square',vol:.07})); },
     czCont(){ [523,659,784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'triangle',vol:.1})); [0,.15,.3].forEach(a=>audio.noise(.5 + a,.3,.15,1800)); },
+    staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
     // 大当たり確定：流れ星のきらめき → 上昇音 → 和音
@@ -558,6 +559,7 @@
     stageCount: saved ? saved.stageCount || 0 : 0, stageLimit: saved ? saved.stageLimit || 0 : 0,
     at: saved ? saved.at || null : null, navi: null, ctrlFlag: null,
     payout: 0, replay: false, flag: null, ready: false, scene: null, tenpai: false, geki: false,
+    missCount: 0, aimGame: false, assist: false,
     cutin: null, gisi: 0, gisiDone: 0, gisiDelay: 0, lockUntil: 0, skipQueued: false, ooi: false,
     peka: saved ? !!saved.carry : false, postPeka: false, pekaType: '-',
     phase: 'idle', startTs: 0, lastTs: 0,
@@ -757,33 +759,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030235';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030253';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030235';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030253';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030235';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030253';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030235';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030253';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030235';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030253';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030235';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030253';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030235';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030253';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030235';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030253';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030235';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030253';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1523,6 +1525,18 @@
       if(Math.random() < .15) hearts(1, true);
     }
 
+    // 店員アシスト中のバッジ
+    function drawStaffBadge(t){
+      g.save(); g.textBaseline = 'middle';
+      const p = 1 + .05*Math.sin(t/150);
+      g.translate(W - 62, 140); g.scale(p, p);
+      g.fillStyle = '#FFE14D'; g.strokeStyle = '#4a2a00'; g.lineWidth = 2;
+      rrPath(g, -56, -11, 112, 22, 11); g.fill(); g.stroke();
+      g.fillStyle = '#4a2a00'; g.font = '900 10px "M PLUS 1p", sans-serif'; g.textAlign = 'center';
+      g.fillText('🙋 店員アシスト中', 0, 1);
+      g.restore();
+    }
+
     // ステージ切り替えのワイプ
     function drawStageWipe(t){
       const e = t - S.stageT, D = 900;
@@ -1731,7 +1745,7 @@
       }
       if(S.tenpai){ drawTenpai(t); drawUI(t); if(S.cut) drawCutin(t); return; }
       // 大当たり確定（図柄告知中）は専用ステージに固定
-      if(S.aim){ drawConfirmStage(t); drawUI(t); drawAimBanner(t); if(S.cut) drawCutin(t); return; }
+      if(S.aim){ drawConfirmStage(t); drawUI(t); drawAimBanner(t); if(S.staff) drawStaffBadge(t); if(S.cut) drawCutin(t); return; }
 
       if(!S.cz) drawStageBg(t);
       const sc = S.scene;
@@ -1812,6 +1826,7 @@
       get mode(){ return S.mode; },
       setAim(key){ S.aim = key; },
       setLucky(on){ S.lucky = on; },
+      setStaff(on){ S.staff = on; if(on) comment('店員さん来た！', pick(VIEWERS)); },
       setCZ(cz){ S.cz = cz ? {...cz} : null; },
       changeStage(n){ S.stg = n; S.stageT = performance.now(); S.np = null; comment('STAGE CHANGE!', pick(VIEWERS)); },
       setStage(n){ S.stg = n; S.np = null; },
@@ -2371,6 +2386,8 @@
     forceStage = false;
 
     // --- 内部抽選（デバッグで固定されていればそれを使う。AT中はAT用テーブル）---
+    // 確定後（持ち越し中）のゲームは「狙うべきゲーム」としてミスを数える
+    state.aimGame = !state.at && !!state.carry;
     const auto = state.at ? lottery(AT_TABLE) : (state.carry || lottery(state.cz ? czTable() : TABLE));
     state.czGame = !!state.cz && !state.at;  // このゲームがチャンスステージ中か
     state.flag = dbg.flag !== undefined ? dbg.flag : auto;
@@ -2429,7 +2446,7 @@
     state.postPeka = false;
     if(isBig(hot) && !state.peka && !state.at){
       const pre = dbg.peka ? dbg.peka === 'pre' : Math.random() < PRE_PEKA;
-      if(pre) setTimeout(() => pekaOn('先ペカ'), 120);
+      if(pre){ state.aimGame = true; setTimeout(() => pekaOn('先ペカ'), 120); }
       else state.postPeka = true;
     }
 
@@ -2458,7 +2475,7 @@
     let d = decideStop(stops, i, base, flag), extra = 0;
 
     // デバッグ用の目押しアシスト：押した位置から1周先までの押し位置を試し、狙いに一番近いものを選ぶ
-    const aim = debugSettings().aim;
+    const aim = state.assist ? 'flag' : debugSettings().aim;
     if(aim){
       let best = null;
       for(let k = 0; k < N; k++){
@@ -2556,6 +2573,7 @@
     if(bigHit){
       // --- 大当たり：AT突入（AT中に揃えば上乗せ）---
       setPeka(false); state.pekaType = '-'; state.carry = null; screen.setAim(null);
+      state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
       if(state.at){ state.at.goal += AT_GOAL[flag]; }
       else state.at = {type:flag, goal:AT_GOAL[flag], paid:0};
       screen.setAT(state.at);
@@ -2586,7 +2604,13 @@
       screen.resolve({flag, hit, big: dupHit || BIG.includes(flag), bigKey: dupHit ? state.dupBig : (BIG.includes(flag) ? flag : null)});
       if(wasTenpai){ sfx.tenpaiFail(); }
       if(wins.length === 0){
-        setMsg(state.peka ? `${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : 'はずれ。SPINでもう一回');
+        if(state.peka && state.aimGame && BIG.includes(flag) && !hit){
+          state.missCount++;
+          const left = STAFF_MISS - state.missCount;
+          setMsg(`${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` + (left > 0 ? `（ミス${state.missCount}回）` : '　店員アシストが使えます'));
+          if(state.assist){ state.assist = false; screen.setStaff(false); }
+          if(left <= 0) showStaff(true);
+        } else setMsg(state.peka ? `${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : 'はずれ。SPINでもう一回');
       } else if(state.replay){
         setMsg('リプレイ！次ゲームはベット不要'); sfx.replay();
       } else if(flag === 'WML'){
@@ -2742,6 +2766,26 @@
     $('skipBtn').hidden = !state.at;
   }, 200);
 
+  // ================================================================
+  // 店員アシスト：確定後に5回揃えられなかったらボタンを表示。
+  // 押すと店員さんが代わりに目押しして、1ゲームで揃えてくれる
+  // ================================================================
+  const STAFF_MISS = 5;
+  function showStaff(on){ $('staffBtn').hidden = !on; }
+  $('staffBtn').addEventListener('click', () => {
+    if(state.phase === 'spinning' || !state.peka || state.assist) return;
+    audio.init();
+    finishCount();
+    state.assist = true; showStaff(false); setAuto(false);
+    screen.setStaff(true); sfx.staff();
+    setMsg('店員さんが目押しします！');
+    // 店員さんの操作：レバー → 左・中・右の順に止める
+    setTimeout(() => {
+      pull();
+      [1100, 1700, 2300].forEach(d => setTimeout(() => { if(state.assist) stopNext(); }, d));
+    }, 900);
+  });
+
   function endAT(){
     const info = {type:state.at.type, paid:state.at.paid};
     state.at = null;
@@ -2777,6 +2821,7 @@
     if(state.cz) endCZ(true);
     state.at = {type, goal:AT_GOAL[type], paid:0};
     setPeka(false); state.carry = null; screen.setAim(null);
+    state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
     screen.setAT(state.at); screen.startAT(null); screen.resultAT(0);
     $('topper').classList.add('party');
     setMsg(`デバッグ：AT開始（${AT_GOAL[type]}枚まで）`); save(); updateUI();
@@ -2822,6 +2867,7 @@
     finishCount(); hideBigWin();
     if(state.at){ state.at = null; screen.setAT(null); $('topper').classList.remove('party'); }
     if(state.cz){ state.cz = null; screen.setCZ(null); }
+    state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
     Object.assign(state, {credits:100, games:0, coinIn:0, coinOut:0, carry:null, payout:0, replay:false, flag:null, scene:null, postPeka:false, pekaType:'-'});
     reels.forEach(r => r.slide = null);
     setPeka(false); screen.idle(); screen.setAim(null);
