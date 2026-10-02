@@ -7,7 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610030316">
+<link rel="stylesheet" href="css/style.css?ver=202610030321">
+<script>
+  // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
+  // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
+  if(/\.github\.io$/.test(location.hostname) && !new URLSearchParams(location.search).has('debug'))
+    document.documentElement.classList.add('public');
+</script>
+<style>.public #howto,.public #dbgBtn,.public #debug{display:none!important}</style>
 </head>
 <body>
 <div class="cab" id="cab">
@@ -122,7 +129,7 @@
   </div>
 </div>
 
-<details>
+<details id="howto">
   <summary>配当表と仕組み</summary>
   <table id="paytable"></table>
   <p class="note">レバーを押した瞬間に役が抽選され（内部抽選）、リールはその結果に従って最大4コマ滑って止まります。当選役は揃えに行き、当選していない役は絶対に揃えません。</p>
@@ -168,6 +175,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610030316"></script>
+<script src="js/main.js?ver=202610030321"></script>
 </body>
 </html>

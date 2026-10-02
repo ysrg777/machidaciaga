@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030316', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030316', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030316', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610030321', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610030321', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030321', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -762,33 +762,33 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030316';
+  HERO.src = 'assets/img/haishin.webp?ver=202610030321';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030316';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610030321';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030316';
+  OJII.src = 'assets/img/ojii.webp?ver=202610030321';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030316';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030321';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030316';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030321';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030316';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030321';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030316';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030321';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030316';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030321';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030316';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030321';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2742,7 +2742,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610030316';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610030321';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
