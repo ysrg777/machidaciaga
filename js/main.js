@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031335', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031335', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610031335', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610031335', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610031335', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610031335', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031335', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031346', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031346', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610031346', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610031346', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610031346', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610031346', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031346', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -817,45 +817,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031335';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031346';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031335';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031346';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031335';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031346';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031335';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031346';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031335';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031346';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031335';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031346';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031335';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031346';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031335';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031346';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031335';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031346';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031335';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031346';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031335';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031346';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031335';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031346';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031335';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031346';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1658,8 +1658,8 @@
     }
     // アツさの星（★5つ中いくつ光るか）。S6ライバーは虹色の星
     function drawStars(b, cx, cy, t){
-      const n = b.stars || 1, r = 5.5, gap = 13;
-      g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, cx - 38, cy - 8, 76, 16, 8); g.fill();
+      const n = b.stars || 1, r = 4.6, gap = 11;
+      g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, cx - 31, cy - 6.5, 62, 13, 6.5); g.fill();
       for(let i=0;i<5;i++){
         const x = cx + (i - 2)*gap, on = i < n;
         g.beginPath();
@@ -1795,7 +1795,7 @@
       // ---- 描画：種類ごとの右側 ----
       if(type === 'gun' || type === 'rap'){
         hpBars(b, foeName);
-        drawFoe(type === 'gun' ? 0 : 1, fp, fx + (Math.random()-.5)*shakeF, 152, 96, flashF);
+        drawFoe(type === 'gun' ? 0 : 1, fp, fx + (Math.random()-.5)*shakeF, 157, 80, flashF);
         if(type === 'rap' && fp === 'attack') for(let i=0;i<3;i++){ g.strokeStyle = '#FF4F8B'; g.lineWidth = 3; g.beginPath(); g.arc(fx - 40, 100, 14 + i*10 + (t/40 % 10), Math.PI*.7, Math.PI*1.3); g.stroke(); }
       } else if(type === 'event'){
         drawRanking(b, t, resWin === true);
@@ -1804,43 +1804,44 @@
         g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 222, 22, 92, 15, 7); g.fill();
         g.fillStyle = '#FFE14D'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(`S6ライバー 残り${alive}人`, 268, 30); g.restore();
-        const pos = [[200,118],[236,112],[272,118],[300,112],[218,152],[260,154]];
+        const pos = [[200,122],[236,116],[272,122],[300,116],[218,156],[260,158]];
         for(let i=0;i<6;i++){
           const ko = i >= alive, [x, y] = pos[i];
           const bob = ko ? 0 : Math.abs(Math.sin(t/200 + i))*3;
           drawLiver(i, ko, x + (A && A.type === 'enemy' && !ko ? -Math.min(1, ae/300)*20 : 0), y - bob, 46, ko ? .55 : 1);
         }
       }
-      if(type === 's6') drawMachidaFighter(hp, hx + (Math.random()-.5)*shakeH, 152, 96);   // S6ライバー戦は覚醒町田さん
-      else drawHeroSprite(hp, hx + (Math.random()-.5)*shakeH, 150, 84);
+      const leftCol = type === 'event' || type === 's6';   // 右側にボードや人がいる種類は、文字が左上に来る
+      if(type === 's6') drawMachidaFighter(hp, hx + (Math.random()-.5)*shakeH, 157, 68);   // S6ライバー戦は覚醒町田さん
+      else drawHeroSprite(hp, hx + (Math.random()-.5)*shakeH, 157, leftCol ? 64 : 72);
       drawGisi(t);
       // ラップの吹き出し
       if(bubble){
         const lines = bubble.text.split(' / ');
         g.save(); g.font = 'bold 9px "M PLUS 1p", sans-serif';
         const w = Math.max(...lines.map(l => g.measureText(l).width)) + 16, x = bubble.side === 'hero' ? 8 : W - 8 - w;
-        g.fillStyle = 'rgba(255,255,255,.95)'; rrPath(g, x, 56, w, 30, 8); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.95)'; rrPath(g, x, 46, w, 28, 8); g.fill();
         g.strokeStyle = bubble.side === 'hero' ? '#FF4F8B' : '#7A3DD6'; g.lineWidth = 2; g.stroke();
         g.fillStyle = '#2a0018'; g.textBaseline = 'middle'; g.textAlign = 'left';
-        lines.forEach((l, k) => g.fillText(l, x + 8, 65 + k*12));
+        lines.forEach((l, k) => g.fillText(l, x + 8, 54 + k*12));
         g.restore();
       }
       if(overlay > 0){ g.fillStyle = `rgba(255,255,255,${overlay*.85})`; g.fillRect(0,0,W,H); }
-      if(txt){
+      if(txt && !bubble){
         const big = /WIN|優勝|撃破!!|復活|WINNER/.test(txt) && A && A.type === 'result';
         const col = resWin === false ? '#9FB8FF' : big ? '#FFE14D' : '#fff';
-        const p = 1 + .05*Math.sin(t/90), y = bubble ? 98 : 80;
-        const cx = (type === 'event' || type === 's6') ? 92 : W/2;   // 右側にボードや人がいる種類は左寄せ
+        const p = 1 + .04*Math.sin(t/90), y = big ? 74 : 77;
+        const cx = leftCol ? 86 : W/2;
         g.save(); g.translate(cx, y); g.scale(p, p); g.translate(-cx, -y);
-        bText(txt, y, big ? 22 : 14, col, '#2a0018', cx); g.restore();
+        bText(txt, y, big ? 20 : 12.5, col, '#2a0018', cx); g.restore();
       }
       // タイトルとラウンド
-      if(!A || A.type !== 'result'){
+      if((!A || A.type !== 'result') && !bubble){   // ラップの吹き出しが出ている間はタイトル帯を隠す
         const tx = (type === 'event' || type === 's6') ? 86 : W/2;
         g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, tx - 78, 44, 156, 13, 6); g.fill();
         g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(`${BATTLES[type].name}　${b.game >= 5 ? 'FINAL' : `ROUND ${b.game}/5`}`, tx, 50.5); g.restore();
-        drawStars(b, tx, 64, t);
+        drawStars(b, tx, 63.5, t);
       }
     }
 
@@ -3535,7 +3536,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031335';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031346';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
