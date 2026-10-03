@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610040028', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610040028', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610040028', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610040028', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610040028', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610040028', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610040028', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610040049', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610040049', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610040049', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610040049', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610040049', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610040049', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610040049', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -853,53 +853,60 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610040028';
+  HERO.src = 'assets/img/haishin.webp?ver=202610040049';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610040028';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610040049';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610040028';
+  OJII.src = 'assets/img/ojii.webp?ver=202610040049';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610040028';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610040049';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610040028';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610040049';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610040028';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610040049';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610040028';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610040049';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610040028';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610040049';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610040028';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610040049';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610040028';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610040049';
   // 777ボーナス中の液晶背景：ループ動画（640×320・約40秒・無音。曲はボーナスBGMのまま）
   const ATV = document.createElement('video');
   ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
-  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610040028';
-  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610040028';
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610040049';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610040049';
   // H.264（iPhone・Safari・Chrome など）が使えなければ WebM（VP9）を使う
   ATV.src = ATV.canPlayType('video/mp4; codecs="avc1.4D401E"') ? ATV_MP4 : ATV_WEBM;
   const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
+  // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒・無音）
+  const BV = document.createElement('video');
+  BV.muted = true; BV.playsInline = true; BV.setAttribute('playsinline', ''); BV.setAttribute('muted', ''); BV.preload = 'auto';
+  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610040049';
+  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610040049';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
+  BV.src = BV.canPlayType('video/mp4; codecs="avc1.4D401E"') || !BV_WEBM ? BV_MP4 : BV_WEBM;
+  const bvReady = () => BV.readyState >= 2 && BV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610040028';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610040049';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610040028';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610040049';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610040028';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610040049';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2389,30 +2396,24 @@
       drawGisi(t);
       drawATGain(t);
     }
-    // ボーナス中の残り枚数：左上の見やすいパネル＋太い進捗バー
+    // ボーナス中の残り枚数：左上の小さなピル＋細い進捗バー（動画のじゃまにならないように）
     function drawATHud(t){
       const at = S.at, left = Math.max(0, at.goal - at.paid), last = left <= 30;
       g.save(); g.textBaseline = 'middle';
-      // パネル
-      g.fillStyle = 'rgba(10,0,30,.78)'; rrPath(g, 6, 22, 124, 36, 9); g.fill();
-      g.lineWidth = 1.6; g.strokeStyle = last ? `hsl(${(t/3)%360},100%,65%)` : '#F2C14E'; g.stroke();
-      g.textAlign = 'left'; g.fillStyle = '#ffd1ea'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif';
-      g.fillText(last ? 'ラストスパート！' : '残り', 13, 32);
-      g.fillStyle = 'rgba(255,255,255,.6)'; g.font = '7.5px "M PLUS 1p", sans-serif'; g.fillText(`目標 ${at.goal}枚`, 13, 48);
-      // 大きな数字（金色のグラデーション）
-      const pulse = last ? 1 + .06*Math.sin(t/120) : 1;
-      g.translate(112, 41); g.scale(pulse, pulse);
-      const gr = g.createLinearGradient(0, -12, 0, 12); gr.addColorStop(0, '#FFFBE6'); gr.addColorStop(.5, '#FFD23A'); gr.addColorStop(1, '#E08A00');
-      g.textAlign = 'right'; g.font = '26px DotGothic16, monospace';
-      g.lineWidth = 4; g.strokeStyle = '#2a0018'; g.strokeText(left, 0, 1);
-      g.shadowColor = last ? '#FF4F8B' : '#FFB000'; g.shadowBlur = 10; g.fillStyle = gr; g.fillText(left, 0, 1);
-      g.shadowBlur = 0; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText('枚', 3, 5);
+      g.fillStyle = 'rgba(10,0,30,.55)'; rrPath(g, 6, 22, 70, 17, 8.5); g.fill();
+      g.lineWidth = 1; g.strokeStyle = last ? `hsl(${(t/3)%360},100%,65%)` : 'rgba(242,193,78,.7)'; g.stroke();
+      g.textAlign = 'left'; g.fillStyle = last ? '#FFB0D0' : 'rgba(255,255,255,.8)'; g.font = 'bold 7px "M PLUS 1p", sans-serif';
+      g.fillText('残り', 12, 31);
+      const gr = g.createLinearGradient(0, 24, 0, 38); gr.addColorStop(0, '#FFFBE6'); gr.addColorStop(1, '#FFC23A');
+      g.textAlign = 'right'; g.font = '14px DotGothic16, monospace'; g.lineWidth = 2.5; g.strokeStyle = 'rgba(30,0,20,.8)';
+      g.strokeText(left, 64, 31.5); g.fillStyle = gr; g.fillText(left, 64, 31.5);
+      g.textAlign = 'left'; g.font = 'bold 6.5px "M PLUS 1p", sans-serif'; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText('枚', 66, 32);
       g.restore();
-      // 進捗バー（下端）
+      // 進捗バー（下端・細め）
       const rate = Math.min(1, at.paid / at.goal), bw = W - 12;
-      g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 6, H - 11, bw, 7, 3.5); g.fill();
+      g.save(); g.fillStyle = 'rgba(0,0,0,.35)'; rrPath(g, 6, H - 6, bw, 3, 1.5); g.fill();
       const pg = g.createLinearGradient(6, 0, 6 + bw, 0); pg.addColorStop(0, '#FF4F8B'); pg.addColorStop(.5, '#FFD23A'); pg.addColorStop(1, '#5DFF8A');
-      g.fillStyle = pg; g.shadowColor = '#FFD23A'; g.shadowBlur = 6; rrPath(g, 6, H - 11, Math.max(7, bw*rate), 7, 3.5); g.fill();
+      g.fillStyle = pg; rrPath(g, 6, H - 6, Math.max(3, bw*rate), 3, 1.5); g.fill();
       g.restore();
     }
     function drawATGain(t){
@@ -2824,29 +2825,7 @@
         else c.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
         c.restore();
       }
-      // 文字：下部に「ボーナス！ボーナス！」と「777を狙え！！」
-      const te = e - 500;
-      if(te > 0){
-        const band = c.createLinearGradient(0, h*.74, 0, h); band.addColorStop(0, 'rgba(20,0,40,0)'); band.addColorStop(.4, 'rgba(20,0,40,.6)'); band.addColorStop(1, 'rgba(20,0,40,.8)');
-        c.fillStyle = band; c.fillRect(0, h*.74, w, h*.26);
-        const p = Math.min(1, te/240), scl = p < 1 ? 2.2 - 1.2*easeOut(p) : 1 + .035*Math.sin(te/80);
-        let fs = Math.min(w*.13, 80); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const tw = c.measureText('ボーナス！ボーナス！').width; if(tw > w*.94) fs *= w*.94/tw;
-        c.save(); c.translate(w/2, h*.84); c.scale(scl, scl); c.rotate(-.03);
-        c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
-        for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
-        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('ボーナス！ボーナス！', 0, 0);
-        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('ボーナス！ボーナス！', 0, 0);
-        c.fillStyle = gr; c.shadowColor = '#fff'; c.shadowBlur = 20; c.fillText('ボーナス！ボーナス！', 0, 0);
-        c.restore();
-        if(te > 450){
-          const afs = Math.min(w*.075, 40);
-          c.save(); c.globalAlpha *= Math.min(1, (te - 450)/200); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
-          c.font = `900 ${afs}px "M PLUS 1p", sans-serif`; c.lineWidth = afs*.28; c.strokeStyle = '#2a0010'; c.strokeText('777を狙え！！', w/2, h*.93);
-          c.fillStyle = Math.floor(e/250) % 2 ? '#FFE14D' : '#fff'; c.fillText('777を狙え！！', w/2, h*.93); c.restore();
-        }
-      }
+      // （文字は表示しない：イラストと光・クラッカーだけ）
       // 最初の白フラッシュ
       if(e < 220){ c.globalAlpha = 1 - e/220; c.fillStyle = '#fff'; c.fillRect(0,0,w,h); }
       c.globalAlpha = 1;
@@ -2888,32 +2867,7 @@
         c.shadowColor = 'rgba(255,240,180,.95)'; c.shadowBlur = 36;
         c.drawImage(OJII, -iw/2, -ih/2, iw, ih); c.restore();
       }
-      // 「ボーナス！ボーナス！」
-      const te = e - 800;
-      if(te > 0){
-        const p = Math.min(1, te/240), sc = p < 1 ? 2.4 - 1.4*easeOut(p) : 1 + .035*Math.sin(te/80);
-        let fs = Math.min(w*.14, 84); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const tw = c.measureText('ボーナス！ボーナス！').width; if(tw > w*.94) fs *= w*.94/tw;
-        c.save(); c.translate(w/2, h*.16); c.scale(sc, sc); c.rotate(-.04);
-        c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
-        for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
-        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('ボーナス！ボーナス！', 0, 0);
-        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('ボーナス！ボーナス！', 0, 0);
-        c.fillStyle = gr; c.fillText('ボーナス！ボーナス！', 0, 0);
-        c.restore();
-        // 狙う図柄
-        const ae = te - 400;
-        if(ae > 0){
-          const a = Math.min(1, ae/200), afs = Math.min(w*.075, 40);
-          c.save(); c.globalAlpha *= a; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
-          c.font = `900 ${afs}px "M PLUS 1p", sans-serif`;
-          const txt = key === 'S7' ? '777を狙え！！' : 'BAR・BAR・BARを狙え！！';
-          c.lineWidth = afs*.28; c.strokeStyle = '#2a0010'; c.strokeText(txt, w/2, h*.92);
-          c.fillStyle = Math.floor(e/250) % 2 ? '#FFE14D' : '#fff'; c.fillText(txt, w/2, h*.92);
-          c.restore();
-        }
-      }
+      // （文字は表示しない：画像と光だけ）
       // 最初の白フラッシュ
       if(e < 160){ c.globalAlpha = 1 - e/160; c.fillStyle = '#fff'; c.fillRect(0,0,w,h); }
       c.globalAlpha = 1;
@@ -2929,27 +2883,56 @@
   // ================================================================
   const bonusIn = (() => {
     const cv = $('bonusIn'), c = cv.getContext('2d');
-    let active = false, t0 = 0, dur = 3600, dpr = 1, info = null, onEnd = null, conf = [];
+    let active = false, t0 = 0, dur = 3600, dpr = 1, info = null, onEnd = null, conf = [], useVideo = false;
     const easeBack = x => 1 + 2.7*Math.pow(x-1,3) + 1.7*Math.pow(x-1,2);
     const easeOut = x => 1 - Math.pow(1 - x, 3);
     function start(opt, cb){
       if(active){ cb && cb(); return; }
       info = opt; onEnd = cb; dpr = Math.min(2, window.devicePixelRatio || 1);
       dur = reduceMotion ? 1800 : 3600;
+      useVideo = bvReady() || BV.readyState >= 1;
+      if(useVideo){ try { BV.currentTime = 0; } catch(e){} BV.play().catch(() => { useVideo = false; }); dur = Math.round((BV.duration || 8) * 1000) + 200; }
       conf = Array.from({length:90}, () => ({x:Math.random(), y:-Math.random()*.6, v:.12 + Math.random()*.18, r:Math.random()*6, vr:(Math.random()-.5)*.3,
         c:['#FF4F8B','#FFE14D','#4FF3FF','#9B5CFF','#5DFFB0','#fff'][Math.floor(Math.random()*6)], s:4 + Math.random()*5}));
       active = true; t0 = performance.now(); cv.hidden = false;
       if(performance.now() - (state.bigwinSndAt || -1e9) > 4800) sfx.bonusIn();
       requestAnimationFrame(loop);
     }
-    function finish(){ if(!active) return; active = false; cv.hidden = true; const f = onEnd; onEnd = null; f && f(); }
+    function finish(){ if(!active) return; active = false; cv.hidden = true; try { BV.pause(); } catch(e){} const f = onEnd; onEnd = null; f && f(); }
     function loop(t){
       try { if(step(t)) requestAnimationFrame(loop); else finish(); }
       catch(err){ console.error(err); finish(); }
     }
+    // 動画版：縦長の動画を画面いっぱいに（はみ出す分は切り落とす）。最後の約2秒で虹色の「BONUS STAGE」
+    function stepVideo(t, w, h, u){
+      const e = t - t0;
+      c.fillStyle = '#000'; c.fillRect(0,0,w,h);
+      if(bvReady()){
+        const sc = Math.max(w / BV.videoWidth, h / BV.videoHeight), vw = BV.videoWidth*sc, vh = BV.videoHeight*sc;
+        c.drawImage(BV, (w - vw)/2, (h - vh)/2, vw, vh);
+      }
+      const te = e - (dur - 2300);
+      if(te > 0){
+        const p = Math.min(1, te/300), sc2 = p < 1 ? 2.2 - 1.2*easeOut(p) : 1 + .03*Math.sin(te/90);
+        let fs = Math.min(w*.17, 104); c.font = `900 ${fs}px "Titan One","M PLUS 1p",Impact,sans-serif`;
+        const tw = c.measureText('BONUS STAGE').width; if(tw > w*.94) fs *= w*.94/tw;
+        c.save(); c.globalAlpha = Math.min(1, te/200) * (e > dur - 250 ? Math.max(0, (dur - e)/250) : 1);
+        c.translate(w/2, h*.5); c.scale(sc2, sc2); c.transform(1, 0, -.15, 1, 0, 0);
+        c.font = `900 ${fs}px "Titan One","M PLUS 1p",Impact,sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('BONUS STAGE', 0, 0);
+        c.lineWidth = fs*.1; c.strokeStyle = '#fff'; c.strokeText('BONUS STAGE', 0, 0);
+        const gr = c.createLinearGradient(-w*.45, 0, w*.45, 0), o = (e/4) % 360;
+        for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*55) % 360},100%,60%)`);
+        c.shadowColor = '#FFD23A'; c.shadowBlur = 24; c.fillStyle = gr; c.fillText('BONUS STAGE', 0, 0);
+        c.restore();
+        if(te < 220){ c.fillStyle = `rgba(255,255,255,${.6*(1 - te/220)})`; c.fillRect(0,0,w,h); }
+      }
+      return e < dur;
+    }
     function step(t){
       const r = cv.getBoundingClientRect(), w = r.width || innerWidth, h = r.height || innerHeight, u = Math.min(w, h);
       if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+      if(useVideo){ c.setTransform(dpr,0,0,dpr,0,0); return stepVideo(t, w, h, u); }
       const e = t - t0, k = dur === 3600 ? 1 : .5;
       c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
       const fadeOut = e > dur - 350 ? Math.max(0, (dur - e)/350) : 1;
@@ -4312,7 +4295,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610040028';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610040049';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
