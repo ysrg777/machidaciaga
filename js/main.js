@@ -266,6 +266,8 @@
 
 
 
+
+
   const audio = {
     ctx:null, fx:null, droneOsc:null, droneGain:null,
     // テンパイ中にじわじわ上がっていく持続音
@@ -301,9 +303,11 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031250', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031250', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031250', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031301', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031301', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610031301', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610031301', 'bigwinBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031301', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -490,7 +494,22 @@
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
     // 777確定：「キュインキュイン！」（ビブラートのかかった上昇音を4回）＋きらめき
+    // BIG WIN!! の効果音（音源を鳴らせたら true）
+    bigwinSound(){
+      if(!state.sound || !audio.ctx || !audio.bigwinBuf) return false;
+      const src = audio.ctx.createBufferSource(), g = audio.ctx.createGain();
+      src.buffer = audio.bigwinBuf; g.gain.value = 1.0;
+      src.connect(g); g.connect(audio.master); src.start();
+      state.bigwinSndAt = performance.now();
+      return true;
+    },
     kyuin777(){
+      if(state.sound && audio.ctx && audio.pokyunBuf){
+        const src = audio.ctx.createBufferSource(), g = audio.ctx.createGain();
+        src.buffer = audio.pokyunBuf; g.gain.value = 1.1;
+        src.connect(g); g.connect(audio.master); src.start();
+        return;
+      }
       for(let k=0;k<4;k++){
         const at = k*.2;
         audio.tone(600, at, .26, {type:'sine', vol:.16, to:3000, vib:60});
@@ -783,45 +802,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031250';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031301';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031250';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031301';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031250';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031301';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031250';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031301';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031250';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031301';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031250';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031301';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031250';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031301';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031250';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031301';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031250';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031301';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031250';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031301';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031250';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031301';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031250';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031301';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031250';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031301';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2508,7 +2527,7 @@
       conf = Array.from({length:90}, () => ({x:Math.random(), y:-Math.random()*.6, v:.12 + Math.random()*.18, r:Math.random()*6, vr:(Math.random()-.5)*.3,
         c:['#FF4F8B','#FFE14D','#4FF3FF','#9B5CFF','#5DFFB0','#fff'][Math.floor(Math.random()*6)], s:4 + Math.random()*5}));
       active = true; t0 = performance.now(); cv.hidden = false;
-      sfx.bonusIn();
+      if(performance.now() - (state.bigwinSndAt || -1e9) > 4800) sfx.bonusIn();
       requestAnimationFrame(loop);
     }
     function finish(){ if(!active) return; active = false; cv.hidden = true; const f = onEnd; onEnd = null; f && f(); }
@@ -2789,11 +2808,13 @@
   function showBigWin(key){
     $('bwText').textContent = 'BIG WIN!!';
     $('bwAmount').textContent = `AT ${AT_GOAL[key]}枚`;
-    setTimeout(sfx.atStart, 1900);
+    // 音源があればそれだけを鳴らす（約5秒。続くBONUS STAGEの演出まで流れる）
+    const played = sfx.bigwinSound();
+    if(!played) setTimeout(sfx.atStart, 1900);
     setTimeout(hideBigWin, 3200);
     $('bigwin').hidden = false;
     if(!reduceMotion){ $('cab').classList.remove('shake'); void $('cab').offsetWidth; $('cab').classList.add('shake'); }
-    sfx.jackpot();
+    if(!played) sfx.jackpot();
     [0,500,1000,1600].forEach(t => setTimeout(() => { spawn(70,'confetti'); spawn(35,'coin'); }, t));
   }
   function hideBigWin(){ $('bigwin').hidden = true; }
@@ -3405,7 +3426,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031250';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031301';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
