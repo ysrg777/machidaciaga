@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610031346">
+<link rel="stylesheet" href="css/style.css?ver=202610031440">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -106,6 +106,10 @@
         <option value="auto">自動</option><option value="win">発生（勝ち）</option><option value="lose">発生（負け）</option><option value="comeback">発生（逆転勝ち）</option></select></label>
       <label>バトルの種類<select id="fEnemy">
         <option value="auto">自動</option><option value="gun">通常バトル（黒服）</option><option value="rap">ラップバトル</option><option value="event">イベント出場</option><option value="s6">S6ライバー全員を倒せ</option></select></label>
+      <label>次回予告<select id="fPreview">
+        <option value="auto">自動</option><option value="on">発生（内容は自動）</option><option value="thumb">サムネ</option><option value="rewrite">書き換え</option><option value="silhouette">シルエット</option><option value="battle">バトル予告</option><option value="accident">放送事故（プレミア）</option></select></label>
+      <label>フリーズ<select id="fFreeze">
+        <option value="auto">自動</option><option value="on">発生</option></select></label>
       <label>目押し<select id="fAim">
         <option value="off">アシストなし</option><option value="flag">当選役を狙う</option><option value="seven">7を狙う</option></select></label>
     </div>
@@ -145,6 +149,8 @@
   <p class="note">チャンスステージ：小役で7・BARの抽選に外れたとき、リプレイ1%・ぶどう1%・ベル5%・スイカ10%・チェリー30%で移行。初回20ゲームで、7・BARの確率が4倍。残り5ゲームから継続ジャッジの煽りが入り、50%で20ゲーム継続（最大100ゲーム）。</p>
   <p class="note">通常ステージは4種類（配信部屋・ゲーム部屋・バーラウンジ・実家）。アツいときほどステージチェンジが起きやすく、7・BAR当選時はステージ3に移りやすくなります。キャラのポーズに合わせて炎・音符・泡などの演出が出ます。</p>
   <p class="note">バトルリーチ：5ゲームの連続演出。1ゲームごとに展開が進み、5ゲーム目の第3停止で決着。勝てば大当たり確定！ 種類は「通常バトル（拳銃を持った黒服）」「ラップバトル」「イベント出場（めざせ優勝）」「S6ライバー全員を倒せ」の4つで、後ろほど期待度が高め。バトル名の下の星が多いほどアツく、S6ライバー全員を倒せは虹色の星で大当たり確定。擬似連が続くとバトルに発展することも（発展しないこともあります）。途中でやられても逆転することも。</p>
+  <p class="note">次回予告：ゲームの終わりに「次回配信のお知らせ」が出たら、次のゲームに注目。タイトル・サムネの色・出演者・日時・コメントの数でアツさが変わります（虹色・アルマンド・覚醒町田さんは確定）。タイトルの書き換え、シルエットの出演者、バトル予告、放送事故（プレミア）もあり。</p>
+  <p class="note">フリーズ（プレミア）：レバーを押した瞬間にリールがガタガタ揺れて暗転したら…逆回転のあと、パトランプが降りてきます。押せば大当たり確定＆ボーナス100枚上乗せ！</p>
   <p class="note">大当たり確定後に5回揃えられなかったら「店員アシスト」ボタンが出ます。押すと店員さんが代わりに目押しして揃えてくれます。</p>
   <p class="note">大当たり確定時は液晶に「777を狙え！！」などの告知が出ます。レバー後に擬似連（①追いハート→②追い花火→③追い魔法のお城→④追い馬車→⑤追いメガポコナイト）が続くほどチャンス。擬似連ではおじいちゃんが「おーーい！」と登場し、段が進むごとに大きくなります。リール回転開始時のカットインは緑「ねぇええええ」＜赤「燃やすよぉ〜」＜虹「アルマンド〜」（虹は確定）。ボーナス中はドレスのキャラが登場します。AT中は液晶右下のSKIPで残りを消化できます。</p>
   <p class="note">通常ステージは配信主がBGMに合わせて揺れる配信画面。AT・テンパイ・激アツではカピバラの「かぴすけ」が登場します。ハート連打・金ハート連打・ギフト（青→緑→赤→虹）・ランキング急上昇の順に期待度が高く、第2停止で画面全体が覆われる「激アツ」が出ればかなりのチャンス。</p>
@@ -165,6 +171,10 @@
 <canvas id="gekiatsu" aria-hidden="true" hidden></canvas>
 <canvas id="bonusIn" aria-hidden="true" hidden></canvas>
 <canvas id="kakutei" aria-hidden="true" hidden></canvas>
+<div class="freeze" id="freezeFx" hidden>
+  <button class="patlamp" id="patlamp" aria-label="パトランプを押す" hidden><span class="pl-beam"></span><span class="pl-emoji">🚨</span></button>
+  <div class="pl-text" id="plText" hidden>パトランプを押せ!!</div>
+</div>
 <div class="namebox" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
   <div class="namecard">
     <div class="name-title" id="nameTitle">リスナー名を登録</div>
@@ -191,6 +201,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610031346"></script>
+<script src="js/main.js?ver=202610031440"></script>
 </body>
 </html>

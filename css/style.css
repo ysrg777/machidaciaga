@@ -189,6 +189,35 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 #bonusIn[hidden]{display:none}
 #kakutei{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:47;cursor:pointer}
 #kakutei[hidden]{display:none}
+/* フリーズ：画面全体が暗転し、最後に白く光る */
+.freeze{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,0);pointer-events:none;transition:background-color .15s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.freeze[hidden]{display:none}
+.freeze.black{background:rgba(0,0,0,1)}
+.freeze.dim{background:rgba(0,0,0,.45);transition:background-color .8s}
+.freeze.lamp{pointer-events:auto}
+.freeze.flash{background:#fff;transition:background-color .06s}
+/* リールのガタガタ */
+.window.rattle{animation:rattle .07s linear infinite}
+@keyframes rattle{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px) rotate(-.4deg)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-3px) rotate(.4deg)}100%{transform:translate(2px,3px)}}
+/* パトランプ：上から降りてきて、赤い光が回る */
+.patlamp{position:relative;width:min(56vw,260px);aspect-ratio:1;border:0;border-radius:50%;background:transparent;cursor:pointer;
+  animation:plDrop .9s cubic-bezier(.3,1.5,.5,1) both}
+.patlamp[hidden]{display:none}
+.pl-emoji{position:relative;z-index:1;display:block;font-size:min(46vw,210px);line-height:1;filter:drop-shadow(0 0 30px rgba(255,40,40,.9));animation:plPulse .5s ease-in-out infinite alternate}
+.pl-beam{position:absolute;inset:-60%;border-radius:50%;background:conic-gradient(from 0deg, rgba(255,40,40,.75), rgba(255,40,40,0) 14%, rgba(255,40,40,0) 50%, rgba(255,40,40,.75) 52%, rgba(255,40,40,0) 66%, rgba(255,40,40,0));
+  animation:plSpin .8s linear infinite;filter:blur(6px)}
+.patlamp.pressed .pl-emoji{transform:scale(.85);filter:drop-shadow(0 0 60px #fff) brightness(1.6)}
+.pl-text{font:900 clamp(1.7rem,8.5vw,2.8rem) "M PLUS 1p",sans-serif;color:#FFF27A;
+  text-shadow:0 0 2px #fff,0 0 10px #ff2a2a,0 0 22px #ff2a2a,3px 3px 0 #6a0000;
+  animation:plBlink .45s steps(2) infinite, plIn .5s .5s both}
+.pl-text[hidden]{display:none}
+@keyframes plDrop{from{transform:translateY(-110vh)}to{transform:translateY(0)}}
+@keyframes plSpin{to{transform:rotate(360deg)}}
+@keyframes plPulse{to{transform:scale(1.06)}}
+@keyframes plBlink{50%{opacity:.55}}
+@keyframes plIn{from{opacity:0;transform:scale(.6)}}
+@media (prefers-reduced-motion:reduce){.window.rattle,.pl-beam,.pl-emoji,.pl-text{animation:none}}
 /* リスナー名の登録 */
 .namebox{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);padding:20px}
 .namebox[hidden]{display:none}
