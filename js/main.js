@@ -268,6 +268,8 @@
 
 
 
+
+
   const audio = {
     ctx:null, fx:null, droneOsc:null, droneGain:null,
     // テンパイ中にじわじわ上がっていく持続音
@@ -303,11 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031301', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031301', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610031301', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610031301', 'bigwinBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031301', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031321', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031321', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610031321', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610031321', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610031321', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610031321', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031321', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -494,6 +498,17 @@
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
     // 777確定：「キュインキュイン！」（ビブラートのかかった上昇音を4回）＋きらめき
+    // 音源の再生（同じ種類は前の音を止めてから鳴らす）
+    playBuf(name, vol = 1){
+      const buf = audio[name + 'Buf'];
+      if(!state.sound || !audio.ctx || !buf) return false;
+      sfx.stopBuf(name);
+      const src = audio.ctx.createBufferSource(), g = audio.ctx.createGain();
+      src.buffer = buf; g.gain.value = vol; src.connect(g); g.connect(audio.master); src.start();
+      (audio.playing ||= {})[name] = src;
+      return true;
+    },
+    stopBuf(name){ const p = audio.playing && audio.playing[name]; if(p){ try{ p.stop(); }catch(e){} audio.playing[name] = null; } },
     // BIG WIN!! の効果音（音源を鳴らせたら true）
     bigwinSound(){
       if(!state.sound || !audio.ctx || !audio.bigwinBuf) return false;
@@ -802,45 +817,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031301';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031321';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031301';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031321';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031301';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031321';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031301';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031321';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031301';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031321';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031301';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031321';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031301';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031321';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031301';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031321';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031301';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031321';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031301';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031321';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031301';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031321';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031301';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031321';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031301';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031321';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2718,6 +2733,20 @@
     if(busy) setTimeout(() => waitEffects(needIdle, cb), 100); else cb();
   }
 
+  // 7の停止音（ボーナス中は鳴らさない）
+  //   第1停止：止めたリールの窓に7があれば鳴らす
+  //   第2停止：2つのリールの7が同じライン上に並んだ（リーチ）ときだけ鳴らす
+  //   第3停止：鳴らさない（揃ったときは専用の揃い音）
+  function sevenStopSound(i){
+    if(state.at) return;
+    const stopped = reels.map((x, k) => x.spinning ? -1 : k).filter(k => k >= 0);
+    if(stopped.length === 1){
+      if([0,1,2].some(row => symAt(i, reels[i].stopPos, row) === 'S7')) sfx.playBuf('sevenStop', 1);
+    } else if(stopped.length === 2){
+      if(LINES.some(line => stopped.every(k => symAt(k, reels[k].stopPos, line[k]) === 'S7'))) sfx.playBuf('sevenStop', 1);
+    }
+  }
+
   // 7テンパイ：2つのリールが止まり、有効ライン上に7が2つ並んだ状態
   let heartTimer = null;
   function checkTenpai(){
@@ -2808,8 +2837,14 @@
   function showBigWin(key){
     $('bwText').textContent = 'BIG WIN!!';
     $('bwAmount').textContent = `AT ${AT_GOAL[key]}枚`;
-    // 音源があればそれだけを鳴らす（約5秒。続くBONUS STAGEの演出まで流れる）
-    const played = sfx.bigwinSound();
+    // 7揃いは専用の揃い音（約1.4秒）を先に鳴らし、そのあとBIG WINの音（約5秒）へ
+    let played;
+    if(key === 'S7' && sfx.playBuf('sevenAlign', 1.1)){
+      sfx.stopBuf('sevenStop');
+      played = true;
+      state.bigwinSndAt = performance.now() + 1300;   // 突入演出側の重なり判定用
+      setTimeout(() => sfx.bigwinSound(), 1300);
+    } else played = sfx.bigwinSound();
     if(!played) setTimeout(sfx.atStart, 1900);
     setTimeout(hideBigWin, 3200);
     $('bigwin').hidden = false;
@@ -3105,7 +3140,9 @@
       r.p = mod(r.p - move, N);
       if(i === 0 && Math.floor(r.p) !== r.lastTick){ r.lastTick = Math.floor(r.p); sfx.tick(); }
       if(r.stopping && r.remain <= 1e-9){
-        r.p = r.stopPos; r.spinning = false; sfx.stop(i); if(!state.at && !state.battleGame) checkTenpai();
+        r.p = r.stopPos; r.spinning = false; sfx.stop(i);
+        sevenStopSound(i);
+        if(!state.at && !state.battleGame) checkTenpai();
       } else anySpinning = true;
       render(r);
     });
@@ -3426,7 +3463,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031301';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031321';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
