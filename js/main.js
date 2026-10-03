@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031234', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031234', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031234', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031238', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031238', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031238', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -783,45 +783,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031234';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031238';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031234';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031238';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031234';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031238';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031234';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031238';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031234';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031238';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031234';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031238';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031234';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031238';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031234';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031238';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031234';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031238';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031234';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031238';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031234';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031238';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031234';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031238';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031234';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031238';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2674,11 +2674,18 @@
     // 回転中（先ペカ）は、演出が終わるまでSTOPを受け付けない
     if(state.phase === 'spinning') state.lockUntil = Math.max(state.lockUntil || 0, performance.now() + 60000);
     updateUI();
-    kakutei.start(key, () => {
+    // ほかの演出（カットイン・擬似連・激アツ・テンパイ煽りなど）が終わってから全画面演出へ。
+    // 後ペカ（3つ目のSTOPで点灯）は、リールが止まって結果が出てから
+    waitEffects(type === '後ペカ', () => kakutei.start(key, () => {
       if(state.peka){ screen.setAim(key); setMsg(`${key === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！`); }
       if(state.phase === 'spinning') state.lockUntil = performance.now() + 150;
       setTimeout(updateUI, 200);
-    });
+    }));
+  }
+  function waitEffects(needIdle, cb){
+    const busy = geki.active || bonusIn.active || performance.now() < (state.fxBusyUntil || 0)
+      || (needIdle && state.phase === 'spinning') || state.tenpai;
+    if(busy) setTimeout(() => waitEffects(needIdle, cb), 100); else cb();
   }
 
   // 7テンパイ：2つのリールが止まり、有効ライン上に7が2つ並んだ状態
@@ -2967,6 +2974,10 @@
     // ⑤は液晶で2秒見せたあと全画面の激アツ。終わるまでSTOPを受け付けない
     if(state.gisi === 5) state.lockUntil += GISI5_HOLD;
     if(state.gisi) setTimeout(updateUI, state.lockUntil - performance.now() + 20);
+    // このゲームの演出（カットイン・擬似連）が終わる時刻。大当たり確定の全画面演出はこれを待ってから出す
+    { const now = performance.now(); let busy = state.gisiDelay ? now + CUT_DUR : 0;
+      if(state.gisi) busy = now + GISI_START + state.gisiDelay + (state.gisi - 1)*GISI_GAP + (state.gisi === 5 ? GISI5_HOLD : 1150);
+      state.fxBusyUntil = busy; }
 
     // --- ランプ（先ペカ／後ペカ）の抽選 ---
     state.postPeka = false;
@@ -3383,7 +3394,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031234';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031238';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
