@@ -229,6 +229,15 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 #nameInput:focus{outline:none;border-color:var(--gold)}
 .name-err{min-height:1.2em;font-size:.75rem;color:#ff8a8a;margin:6px 0}
 #nameSave{width:100%;padding:12px 0;border:0;border-radius:999px;cursor:pointer;background:linear-gradient(#FFE14D,#FFB000);color:#3a2000;font:900 1rem var(--sans);box-shadow:0 4px 0 #9a6a12}
+/* データ表示 */
+.data{margin:10px 0 0;padding:8px 12px;border-radius:12px;background:#0F0206;border:1px solid #4A2A1A;color:var(--muted);font-size:.78rem}
+.data summary{cursor:pointer;color:var(--gold-hi);font-weight:700}
+.data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.data-grid div{background:#1A0A10;border-radius:8px;padding:6px 8px}
+.data-grid span{display:block;font-size:.68rem}
+.data-grid b{font:1.05rem DotGothic16,monospace;color:#FF8A6A}
+#dGraph{width:100%;height:80px;background:#140308;border-radius:8px}
+.data-hist{margin:8px 0 0;padding-left:1.4em;line-height:1.7}
 /* メダルのチャージ案内 */
 .charge{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);z-index:58;
   width:min(92vw,360px);padding:14px 16px 12px;border-radius:18px;text-align:center;

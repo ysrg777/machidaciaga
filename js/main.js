@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031958', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031958', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610031958', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610031958', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610031958', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610031958', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031958', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610032125', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610032125', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610032125', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610032125', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610032125', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610032125', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610032125', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -523,6 +523,8 @@
     freezeHit(){ audio.tone(3136,0,.6,{type:'sine',vol:.14}); audio.tone(4186,.05,.5,{type:'sine',vol:.1}); audio.noise(0,.2,.4,6000,'highpass'); },
     srStart(){ [392,523,659,784].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'square',vol:.08})); audio.noise(0,.3,.25,2000); },
     srReveal(){ audio.noise(0,.2,.4,3000,'highpass'); [659,880,1175,1568].forEach((f,k)=>audio.tone(f,.05 + k*.07,.22,{type:'triangle',vol:.1})); },
+    uwanose(){ [784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.05,.18,{type:'square',vol:.07})); audio.noise(0,.2,.25,3000,'highpass'); },
+    zoneIn(){ audio.tone(110,0,.8,{type:'sawtooth',vol:.12,to:440}); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.6 + k*.08,.3,{type:'square',vol:.08})); },
     staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
@@ -641,6 +643,9 @@
     cz: saved ? saved.cz || null : null, czGame: false,
     battle: saved && saved.battle && saved.battle.type ? saved.battle : null, battleGame: false,
     sr: null, srBattle: saved ? saved.srBattle || null : null, srGame: false, srPending: false,
+    zencho: saved ? saved.zencho || null : null, czStock: saved ? saved.czStock || null : null, stock: saved ? saved.stock || [] : [],
+    hiki: saved ? saved.hiki || 0 : 0, sinceBig: saved ? saved.sinceBig || 0 : 0, bigs: saved ? saved.bigs || 0 : 0,
+    hist: saved ? saved.hist || [] : [], diffLog: saved ? saved.diffLog || [] : [],
     stage: saved ? saved.stage || 1 : 1, dupBig: null,
     stageCount: saved ? saved.stageCount || 0 : 0, stageLimit: saved ? saved.stageLimit || 0 : 0,
     at: saved ? saved.at || null : null, navi: null, ctrlFlag: null,
@@ -657,7 +662,8 @@
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
-    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, battle:state.battle, sr:state.sr, srBattle:state.srBattle, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
+    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, battle:state.battle, sr:state.sr, srBattle:state.srBattle, zencho:state.zencho, czStock:state.czStock, stock:state.stock,
+    hiki:state.hiki, sinceBig:state.sinceBig, bigs:state.bigs, hist:state.hist, diffLog:state.diffLog, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
 
   const reels = STRIPS.map((strip, i) => {
     const el = stripEls[i];
@@ -847,45 +853,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031958';
+  HERO.src = 'assets/img/haishin.webp?ver=202610032125';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031958';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610032125';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031958';
+  OJII.src = 'assets/img/ojii.webp?ver=202610032125';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031958';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610032125';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031958';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610032125';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031958';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610032125';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031958';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610032125';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031958';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610032125';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031958';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610032125';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031958';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610032125';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031958';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610032125';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031958';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610032125';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031958';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610032125';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -904,7 +910,8 @@
       stg:1, stageT:-1e9, np:null, npCat:'', npT:0, pfx:[], kiaiT:-1e9,
       czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false, players:null, bq:[], bcur:null, bT:0,
       bt:null, bAct:null, bhpView:[100,100], pv:null, pvT:0, rv:null, rvT:-1e9, pvRevealed:false,
-      sr:null, srT:0, srRes:null, srResT:0, pickT:0};
+      sr:null, srT:0, srRes:null, srResT:0, pickT:0,
+      zen:null, zenT:0, hiki:0, atAddV:0, atAddT:-1e9, zoneT:-1e9, bBanner:null, bBannerT:-1e9};
 
     function resize(){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1858,6 +1865,14 @@
         g.restore();
       }
       if(overlay > 0){ g.fillStyle = `rgba(255,255,255,${overlay*.85})`; g.fillRect(0,0,W,H); }
+      // 決着前の溜め：一瞬暗転
+      if(A && A.type === 'clash' && ae > 350 && ae < 1250){ g.fillStyle = `rgba(0,0,0,${Math.min(.85, (ae - 350)/300)})`; g.fillRect(0,0,W,H); txt = '…'; }
+      // 星昇格・乱入昇格
+      const be = t - S.bBannerT;
+      if(S.bBanner && be < 1600){ const k = Math.min(1, be/200);
+        g.save(); g.globalAlpha = be > 1300 ? (1600 - be)/300 : 1; g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0,0,W,H);
+        g.translate(W/2, 86); g.scale(.6 + .4*easeBack(k), .6 + .4*easeBack(k)); g.translate(-W/2, -86);
+        bText(S.bBanner, 86, 16, `hsl(${(t/3)%360},100%,65%)`); g.restore(); }
       if(txt && !bubble){
         const big = /WIN|優勝|撃破!!|復活|WINNER/.test(txt) && A && A.type === 'result';
         const col = resWin === false ? '#9FB8FF' : big ? '#FFE14D' : '#fff';
@@ -2146,6 +2161,24 @@
       g.restore();
     }
 
+    // 前兆ステージ：夜のような紫の空気、流れ星、ざわつくコメント、増える視聴者
+    function drawZen(t){
+      const e = t - S.zenT;
+      g.save();
+      g.fillStyle = `rgba(40,0,80,${.28 + .08*Math.sin(t/400)})`; g.fillRect(0,0,W,H);
+      const vg = g.createRadialGradient(W/2, H/2, 40, W/2, H/2, 200); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(60,0,90,.55)');
+      g.fillStyle = vg; g.fillRect(0,0,W,H);
+      for(let k=0;k<3;k++){ const p = ((t/1400 + k*.33) % 1); g.strokeStyle = `rgba(255,255,255,${.6*(1-p)})`; g.lineWidth = 1.5;
+        g.beginPath(); g.moveTo(W*(1 - p) + 40, 20 + k*18 + p*30); g.lineTo(W*(1 - p) + 70, 12 + k*18 + p*30); g.stroke(); }
+      g.restore();
+      S.viewers += .6;
+      if(Math.random() < .012) comment(pick(['なんか来そう', '空気変わった？', 'ざわざわ…', '前兆きた？', 'BGM変わった？', 'ドキドキ']), pick(VIEWERS));
+    }
+    function drawHiki(t){
+      g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, W - 112, 40, 104, 15, 7); g.fill();
+      g.fillStyle = `hsl(${(t/4)%360},100%,70%)`; g.font = 'bold 8.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(`引き戻しチャンス 残り${S.hiki}G`, W - 60, 47.5); g.restore();
+    }
     // 店員アシスト中のバッジ
     function drawStaffBadge(t){
       g.save(); g.textBaseline = 'middle';
@@ -2369,6 +2402,25 @@
       g.restore();
     }
     function drawATGain(t){
+      // 上乗せ
+      const ae = t - S.atAddT;
+      if(ae < 1700){
+        const k = Math.min(1, ae/200), out = ae > 1400 ? (1700 - ae)/300 : 1;
+        g.save(); g.globalAlpha = out; g.translate(W/2, 62); g.scale(.6 + .4*easeBack(k), .6 + .4*easeBack(k));
+        g.font = '900 20px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+        g.lineWidth = 6; g.strokeStyle = '#2a0018'; g.strokeText(`上乗せ +${S.atAddV}枚!!`, 0, 0);
+        g.fillStyle = `hsl(${(t/3)%360},100%,62%)`; g.fillText(`上乗せ +${S.atAddV}枚!!`, 0, 0); g.restore();
+      }
+      // 特化ゾーン
+      if(S.at && S.at.zone > 0){
+        g.save(); g.fillStyle = 'rgba(80,0,20,.75)'; rrPath(g, W - 128, 40, 120, 16, 8); g.fill();
+        g.strokeStyle = '#FF9A2E'; g.lineWidth = 1.5; g.shadowColor = '#FF5A00'; g.shadowBlur = 10; g.stroke(); g.shadowBlur = 0;
+        g.fillStyle = '#FFE14D'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(`🔥ギター覚醒タイム 残り${S.at.zone}G`, W - 68, 48); g.restore();
+      }
+      const ze = t - S.zoneT;
+      if(ze < 1800){ g.save(); g.globalAlpha = ze > 1500 ? (1800 - ze)/300 : 1; g.fillStyle = 'rgba(255,90,0,.25)'; g.fillRect(0,0,W,H);
+        bText('ギター覚醒タイム突入!!', 82, 18, '#FFE14D', '#5a1000'); g.restore(); }
       const ge = t - S.gainT;
       if(ge < 1200 && S.gain > 0){
         g.save(); g.globalAlpha = 1 - ge/1200; g.textAlign = 'center';
@@ -2413,7 +2465,7 @@
       }
       if(S.pv){ drawPreview(t); if(S.pv) return; }                          // 次回予告
       if(S.sr && !S.at){ drawSR(t); drawUI(t, S.sr.type !== 'hashiguchi'); return; }   // 特殊リーチ
-      if(S.bt && !S.at){ drawBattle(t); drawUI(t, true); return; }   // バトル中はコメント欄を出さない
+      if(S.bt && !S.at){ drawBattle(t); drawUI(t, true); if(S.cut) drawCutin(t); return; }   // バトル中はコメント欄を出さない
       if(S.tenpai){ drawTenpai(t); drawUI(t); if(S.cut) drawCutin(t); return; }
       // 大当たり確定（図柄告知中）は専用ステージに固定
       if(S.aim){ drawConfirmStage(t); drawUI(t); drawAimBanner(t); if(S.staff) drawStaffBadge(t); if(S.cut) drawCutin(t); return; }
@@ -2445,6 +2497,8 @@
       drawGisi(t);
       drawUI(t);
       if(S.aim) drawAimBanner(t);
+      if(S.zen && !S.cz) drawZen(t);
+      if(S.hiki > 0 && !S.cz) drawHiki(t);
       if(S.cz) drawCZJudge(t);
       drawCZResult(t);
       drawCZBanner(t);
@@ -2526,6 +2580,12 @@
         else { S.bt.hp = [0, S.bt.hp[1]]; comment(pick(['どんまい','おしい…','次は勝てる！']), pick(VIEWERS)); }
         setTimeout(() => { if(S.bAct && S.bAct.type === 'result') S.bt = null; }, win ? (comeback ? 2600 : 1800) : 2600); },
       battleEnd(){ S.bt = null; S.bAct = null; },
+      battleUpgrade(b, text){ if(S.bt){ S.bt.type = b.type; S.bt.stars = b.stars; S.bt.rainbow = b.rainbow; S.bt.alive = b.alive; } S.bBanner = text; S.bBannerT = performance.now(); },
+      setZen(z){ if(z && !S.zen) S.zenT = performance.now(); S.zen = z ? {...z} : null; },
+      setHiki(n){ S.hiki = n; },
+      atAdd(n){ S.atAddV = n; S.atAddT = performance.now(); },
+      atZone(){ S.zoneT = performance.now(); },
+      say(text, who){ comment(text, who); },
       setStaff(on){ S.staff = on; if(on) comment('店員さん来た！', pick(VIEWERS)); },
       setCZ(cz){ S.cz = cz ? {...cz} : null; },
       changeStage(n){ S.stg = n; S.stageT = performance.now(); S.np = null; comment('STAGE CHANGE!', pick(VIEWERS)); },
@@ -3188,6 +3248,45 @@
   }
 
   // ================================================================
+  // 告知ルート：7・BARに当選しても、すぐには教えない
+  //   即ペカ 12% ／ 前兆 → リーチ 75% ／ チャンスステージ経由 10% ／ フリーズ 3%
+  //   前兆中は当たりを保留し、カットイン・擬似連・激アツなどで煽ってから、
+  //   バトルか特殊リーチの決着でだけ答えを出す
+  // ================================================================
+  const ROUTE_W = {instant:.12, zencho:.75, cz:.10, freeze:.03};
+  const ZEN_GASA = 1/90;      // ハズレ・小役から始まるガセ前兆（前兆のうち本物はおよそ3回に1回）
+  const CEILING = 666;        // 天井：通常時にこのゲーム数ボーナスが無ければ、バトル（S6）で救済
+  const pickRoute = () => { let r = Math.random(); for(const [k,w] of Object.entries(ROUTE_W)){ if(r < w) return k; r -= w; } return 'zencho'; };
+  function newZencho(big, ceiling){
+    const reach = ceiling ? 'battle' : big ? (Math.random() < .65 ? 'battle' : 'sr') : (Math.random() < .5 ? (Math.random() < .5 ? 'battle' : 'sr') : 'none');
+    return {big: big || null, left: ceiling ? 1 : 2 + Math.floor(Math.random()*5), reach, first: true, ceiling: !!ceiling};
+  }
+  // 保留中に、さらに7・BARを引いたらストック（ボーナス終了後に放出）
+  function stockPush(k){ if(!k) return; (state.stock ||= []).push(k); }
+
+  // ================================================================
+  // ボーナス中の上乗せ・特化ゾーン、終了後の引き戻し、設定示唆
+  // ================================================================
+  const UWA_RATE = .25, UWA_AMOUNTS = [10, 10, 20, 20, 30, 50];
+  const ZONE_RATE = 1/150, ZONE_GAMES = 5, ZONE_AMOUNTS = [10, 15, 15, 20, 30];
+  const HIKI_GAMES = 10, HIKI_MULT = 3;
+  function hikiTable(){
+    const S7 = TABLE.find(t => t[0] === 'S7')[1] * HIKI_MULT, BAR = TABLE.find(t => t[0] === 'BAR')[1] * HIKI_MULT;
+    const tot = S7 + BAR, k = tot > 30000 ? 30000/tot : 1;
+    return TABLE.map(([key,w]) => [key, key === 'S7' ? Math.round(S7*k) : key === 'BAR' ? Math.round(BAR*k) : w]);
+  }
+  const HINTS = [
+    {t:'おつかれさまでした！',               w:[6,6,6,6,6,6]},
+    {t:'奇数っぽい…？',                       w:[3,0,3,0,3,0]},
+    {t:'偶数っぽい…？',                       w:[0,3,0,3,0,3]},
+    {t:'今日はアツい日かも',                  w:[0,0,1,2,3,4]},
+    {t:'設定2以上確定！',                     w:[0,1,1,1,1,1]},
+    {t:'設定4以上確定！',                     w:[0,0,0,1,1,1]},
+    {t:'アルマンド入荷しました（設定6確定）', w:[0,0,0,0,0,.6]}
+  ];
+  function settingHint(){ const n = state.setting - 1; return HINTS[pickIdx(HINTS.map(h => h.w[n]))].t; }
+
+  // ================================================================
   // 特殊リーチ（6種類）：ゲームをまたいで進むリーチ。結果は開始時に決まっている
   //   成功したときの行き先：大当たり／バトル発展／チャンスステージ
   //   7・BAR当選のゲームで始まった場合、当たりは結果発表まで保留する（バトルと同じ）
@@ -3200,7 +3299,7 @@
     house:      {name:'コウジ、家を買う。',         w:16},
     hashiguchi: {name:'誰かが配信に遊びに来た！',   w:18}
   };
-  const SR_RATE = {BIG:.30, CHEM:.08, WML:.04, BEL:.04, CHE:.015, other:.003};
+  const SR_RATE = {BIG:0, CHEM:.08, WML:.04, BEL:.04, CHE:.015, other:.003};   // 7・BAR当選時は告知ルート（前兆）から発生
   const srRate = f => isBig(f) ? SR_RATE.BIG : (SR_RATE[f] ?? SR_RATE.other);
   // ハズレ・小役で始まったときに成功する確率（7・BARのときは必ず成功）
   const SR_GASA_WIN = {icon:.25, audition:0, carriage:0, family:.25, house:.15, hashiguchi:.20};
@@ -3268,8 +3367,8 @@
       } else if(sr.outcome === 'battle'){
         state.srBattle = {type:null, win: !!sr.big, big: sr.big};
         setMsg('バトル発展!! SPINでバトル開始');
-      } else if(sr.outcome === 'cz'){
-        enterCZ();
+      } else if(sr.outcome === 'cz' || Math.random() < .15){
+        enterCZ();   // 失敗しても15%でチャンスステージへ
       }
       save(); updateUI();
     }, wait);
@@ -3314,7 +3413,7 @@
   }
   // ゲーム終了時に、次回予告を出すかどうか（出す場合は次のゲームの抽選をここで済ませる）
   function maybePreview(){
-    if(state.at || state.cz || state.peka || state.carry || state.battle || state.battlePending || state.nextDraw || state.czPending || state.sr || state.srPending || state.srBattle) return;
+    if(state.at || state.cz || state.peka || state.carry || state.battle || state.battlePending || state.nextDraw || state.czPending || state.sr || state.srPending || state.srBattle || state.zencho || state.zSR) return;
     const dbg = debugSettings();
     let f = dbg.flag !== undefined ? dbg.flag : lottery(TABLE);
     if(dbg.preview === 'accident' && !BIG.includes(f)) f = 'S7';   // デバッグ：放送事故は確定なので7にする
@@ -3422,6 +3521,12 @@
   // 1ゲーム分の展開
   function battleTurn(i){
     const b = state.battle; if(!b) return;
+    // 3ゲーム目：勝ちバトルは「乱入昇格」や「星昇格」が起きることがある
+    if(i === 2 && b.win && !b.comeback){
+      if((b.type === 'gun' || b.type === 'rap') && Math.random() < .15){
+        b.type = 's6'; b.stars = 5; b.rainbow = true; b.alive = 6; screen.battleUpgrade(b, '乱入!? S6ライバー戦に昇格!!'); sfx.srReveal();
+      } else if(b.stars < 5 && Math.random() < .4){ b.stars++; screen.battleUpgrade(b, '星昇格!!'); sfx.srReveal(); }
+    }
     const who = b.turns[i] || 'hero';
     let dmg = 14 + Math.floor(Math.random()*11);
     if(b.type === 'event') b.rank = who === 'hero' ? Math.max(2, b.rank - 1) : Math.min(5, b.rank + 1);   // 優勝は最終ゲームで決まる
@@ -3450,7 +3555,10 @@
     } else {
       screen.battleResult(false); sfx.battleLose();
       setMsg(BATTLE_MSG[b.type][1]);
-      setTimeout(() => { state.battlePending = false; if(!state.battle) screen.battleEnd(); }, 2600);
+      setTimeout(() => {
+        state.battlePending = false; if(!state.battle) screen.battleEnd();
+        if(Math.random() < .25 && !state.at && !state.cz){ setMsg('まだ終わらない！ チャンスステージへ'); enterCZ(); }   // 負けたあとの受け皿
+      }, 2600);
     }
   }
 
@@ -3484,11 +3592,14 @@
 
     const dbg = debugSettings();
     forceStage = false;
+    try {
 
     // --- 内部抽選（デバッグで固定されていればそれを使う。AT中はAT用テーブル）---
     // 確定後（持ち越し中）のゲームは「狙うべきゲーム」としてミスを数える
     state.aimGame = !state.at && !!state.carry;
-    const auto = state.at ? lottery(AT_TABLE) : (state.carry || lottery(state.cz ? czTable() : TABLE));
+    const hikiNow = !state.at && !state.cz && !state.carry && (state.hiki || 0) > 0;   // ボーナス終了後の引き戻しゾーン
+    const auto = state.at ? lottery(AT_TABLE) : (state.carry || lottery(state.cz ? czTable() : hikiNow ? hikiTable() : TABLE));
+    if(!state.at){ state.sinceBig = (state.sinceBig || 0) + 1; if(hikiNow){ state.hiki--; screen.setHiki(state.hiki); } }
     state.czGame = !!state.cz && !state.at;  // このゲームがチャンスステージ中か
     state.flag = dbg.flag !== undefined ? dbg.flag : auto;
     // 小役の重複当選（7・BAR）。当たったら次ゲームに持ち越して揃える
@@ -3508,12 +3619,74 @@
     state.freezeUntil = 0;
     let hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
     state.gisiSolo = null; state.preGisi = 0; state.introDelay = 0;
+    // ---------- チャンスステージ経由のルート：ステージ中に「昇格」してバトルへ ----------
+    if(state.cz && state.czStock && !state.at && (state.cz.played || 0) >= state.czStock.at){
+      const k = state.czStock.big; state.czStock = null;
+      state.cz = null; screen.setCZ(null); state.czGame = false;
+      state.srBattle = {type:null, win:true, big:k, promo:true};
+      setMsg('昇格!! バトル発展');
+    }
+    state.czHold = false;
+    if(state.cz && !state.at && !state.peka && !state.carry && (BIG.includes(state.flag) || state.dupBig)){
+      const k = state.dupBig || state.flag;
+      if(state.czStock) stockPush(k); else state.czStock = {big:k, at:(state.cz.played || 0) + 1};   // 次のゲームで昇格
+      if(BIG.includes(state.flag)) state.flag = null;
+      state.dupBig = null; hot = 'BIG'; state.czHold = true;   // このゲームは煽り（カットイン・激アツ）だけ
+    }
+    // ---------- 告知ルート（当選してもすぐには教えない） ----------
+    state.zGame = false; state.routeInstant = false; state.routeFreeze = false; state.routeCZ = false; state.ceilingHit = false;
+    const routeOK = !state.at && !state.cz && !state.peka && !state.carry && !state.battle && !state.sr && !state.srBattle && !state.pvAccident && !state.forceBattle;
+    if(routeOK && !state.zencho){
+      const forced = dbg.battle || dbg.sr || dbg.freeze === 'on';
+      if((state.sinceBig || 0) >= CEILING && !forced){   // 天井
+        state.flag = Math.random() < 1/3 ? 'S7' : 'BAR'; state.dupBig = null; hot = state.flag; state.ceilingHit = true;
+      }
+      if(isBig(hot) && !forced){
+        const key = state.dupBig || state.flag;
+        const route = state.ceilingHit ? 'zencho' : hikiNow ? 'instant' : (dbg.route || pickRoute());
+        if(route === 'instant'){ state.routeInstant = true; if(hikiNow) setTimeout(() => setMsg('引き戻し!!'), 200); }
+        else if(route === 'freeze') state.routeFreeze = true;
+        else {
+          if(route === 'cz'){ state.czStock = {big:key, at: 2 + Math.floor(Math.random()*6)}; state.routeCZ = true; }
+          else { state.zencho = newZencho(key, state.ceilingHit); if(state.ceilingHit) setMsg('天井到達!!'); }
+          if(BIG.includes(state.flag)) state.flag = null;
+          state.dupBig = null; hot = state.zencho ? 'BIG' : null;
+        }
+      } else if(!isBig(hot) && !forced && (dbg.route === 'gasa' || Math.random() < ZEN_GASA)){
+        state.zencho = newZencho(null, false);
+      }
+    }
+    // ---------- 前兆中のゲーム ----------
+    if(state.zencho && !state.at && !state.cz && !state.peka && !state.carry && !state.battle && !state.sr){
+      const z = state.zencho;
+      if(BIG.includes(state.flag) || state.dupBig){   // 前兆中に7・BARを引いた
+        const k = state.dupBig || state.flag;
+        if(!z.big){ z.big = k; if(z.reach === 'none') z.reach = 'battle'; } else stockPush(k);
+        if(BIG.includes(state.flag)) state.flag = null;
+        state.dupBig = null;
+      }
+      if(z.left <= 0){
+        // 前兆の終わり：リーチへ発展（ガセは何も起きない）
+        state.zencho = null; screen.setZen(null);
+        if(z.reach === 'battle') state.srBattle = {type: z.ceiling ? 's6' : null, win: !!z.big, big: z.big, pre: true};
+        else if(z.reach === 'sr') state.zSR = {big: z.big};
+        else if(Math.random() < .2){ state.routeCZ = true; }   // ガセ前兆の受け皿
+        hot = null;
+      } else {
+        state.zGame = true; z.left--; screen.setZen(z);
+        hot = z.big ? 'BIG' : pick(['CHEM', 'BEL', 'WML', 'CHE', null]);   // 予告（カットイン・擬似連・激アツ）の抽選用のアツさ
+      }
+    }
     // ---------- 特殊リーチ ----------
     state.srGame = false;
-    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame){
+    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame && (!state.zGame || state.zSR)){
       if(!state.sr){
         const fsr = dbg.sr;
-        if(dbg.freeze !== 'on' && !state.pvAccident && (fsr || Math.random() < srRate(hot))){
+        if(state.zSR){
+          const zs = state.zSR; state.zSR = null;
+          state.sr = newSR(zs.big, null, zs.big ? 'win' : null);
+          screen.srStart(state.sr); sfx.srStart();
+        } else if(!state.zGame && !state.routeInstant && !state.routeFreeze && dbg.freeze !== 'on' && !state.pvAccident && (fsr || Math.random() < srRate(hot))){
           const bigKey = isBig(hot) ? (state.dupBig || state.flag) : null;
           state.sr = newSR(bigKey, fsr && fsr !== 'on' ? fsr : null, dbg.srWin);
           screen.srStart(state.sr); sfx.srStart();
@@ -3523,7 +3696,7 @@
         state.srGame = true;
         // 特殊リーチ中に引いた7・BARは保留して、結果発表のあとに必ずペカらせる
         if(BIG.includes(state.flag) || state.dupBig){
-          state.sr.big = state.sr.big || state.dupBig || state.flag;
+          if(state.sr.big) stockPush(state.dupBig || state.flag); else state.sr.big = state.dupBig || state.flag;
           if(BIG.includes(state.flag)) state.flag = null;
           state.dupBig = null;
         }
@@ -3534,7 +3707,7 @@
     if(dbg.freeze === 'on' && !state.at && !state.cz && !state.peka && !state.carry && !state.battle && !isBig(hot)){ state.flag = 'S7'; hot = 'S7'; }
     // ---------- バトルリーチ ----------
     state.battleGame = false;
-    if(!state.at && !state.cz && !state.peka && !state.carry){
+    if(!state.at && !state.cz && !state.peka && !state.carry && !state.srGame && !state.zGame){
       if(!state.battle){
         // バトル開始の抽選。擬似連は「そのまま大当たり」にはせず、バトルに発展させる
         //   7・BAR当選：40%でバトル（そのうち65%は擬似連を経由）。バトルにならないときは擬似連も出さない
@@ -3544,8 +3717,8 @@
         if(!state.pvAccident){
         const forced = dbg.battle || (fb ? (fb.win ? 'win' : 'lose') : null), fg = (dbg.gisi !== null && dbg.gisi !== undefined) ? dbg.gisi : null, big = isBig(hot);
         let start = false, win = false, pre = 0;
-        if(forced){ start = true; win = forced !== 'lose'; pre = fb ? 0 : (fg ?? (Math.random() < .6 ? pickPreGisi(win) : 0)); }
-        else if(big){ if(dbg.freeze !== 'on' && Math.random() < BATTLE_RATE.BIG){ start = true; win = true; pre = fg ?? (Math.random() < .65 ? pickPreGisi(true) : 0); } }
+        if(forced){ start = true; win = forced !== 'lose'; pre = fb && !fb.pre ? 0 : (fg ?? (Math.random() < .6 ? pickPreGisi(win) : 0)); }
+        else if(big){ /* 7・BAR当選は告知ルートで振り分け済み（即ペカ・フリーズ） */ }
         else {
           const g0 = fg ?? pickGisi(hot);
           state.gisiSolo = g0;
@@ -3553,7 +3726,8 @@
           else if(Math.random() < battleRate(hot)) start = true;
         }
         if(start){
-          state.battle = newBattle(win, forced === 'comeback', dbg.enemy || (fb && fb.type));   // dbg.enemy＝バトルの種類
+          // 勝ちバトルの2割は、一度やられてから逆転する
+          state.battle = newBattle(win, forced === 'comeback' || (!!fb && win && Math.random() < .2), dbg.enemy || (fb && fb.type));   // dbg.enemy＝バトルの種類
           if(state.battle.type === 's6' || state.battle.win){ state.battle.win = true;
             state.battle.big = (fb && fb.big) || (big ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR')); }
           state.preGisi = pre;
@@ -3574,7 +3748,7 @@
         // バトル中に引いた7・BARは揃えずに保留し、5G目に勝利として発表（途中で引けば逆転）
         if(BIG.includes(state.flag) || state.dupBig){
           if(!state.battle.win){ state.battle.win = true; state.battle.comeback = true; }
-          state.battle.big = state.battle.big || state.dupBig || state.flag;
+          if(state.battle.big && state.battle.win) stockPush(state.dupBig || state.flag); else state.battle.big = state.battle.big || state.dupBig || state.flag;
           if(BIG.includes(state.flag)) state.flag = null;
           state.dupBig = null;
         }
@@ -3583,9 +3757,12 @@
     }
     // ---------- フリーズ（プレミア） ----------
     state.freezeGame = false;
-    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame && !state.srGame){
-      if(isBig(hot) && (dbg.freeze === 'on' || Math.random() < FREEZE_RATE)) state.freezeGame = true;
+    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame && !state.srGame && !state.zGame){
+      if(isBig(hot) && (dbg.freeze === 'on' || state.routeFreeze)) state.freezeGame = true;
     }
+    // 予告（液晶演出・カットイン・激アツ・擬似連）の抽選に使うアツさ。
+    // 即ペカ・放送事故のあとは予告なしでいきなり光らせる（予告 → 即ペカ、という流れは作らない）
+    const effHot = state.routeInstant || state.pvAccident ? null : hot;
     // 通常ステージのステージチェンジ（アツいほど起きやすく、7・BAR当選時はステージ3に行きやすい）
     if(!state.at && !state.cz && !state.peka && !state.battleGame && !state.freezeGame && !state.srGame){
       state.stageCount = (state.stageCount || 0) + 1;
@@ -3612,17 +3789,19 @@
       if(state.navi) setTimeout(sfx.navi, 150);
     } else {
       // --- 液晶演出の抽選（ランプ点灯中は通常演出）---
-      state.scene = state.battleGame || state.freezeGame || state.srGame ? 'walk' : dbg.scene || (state.peka ? 'walk' : pickScene(hot));
+      state.scene = state.battleGame || state.freezeGame || state.srGame ? 'walk' : dbg.scene || (state.peka ? 'walk' : pickScene(effHot));
       screen.start(state.scene);
     }
     // --- 激アツ演出の抽選（通常時のみ）---
-    state.geki = !state.at && !state.peka && !state.battleGame && !state.freezeGame && !state.srGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
+    state.geki = !state.at && !state.peka && !state.battleGame && !state.freezeGame && !state.srGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(effHot) * (state.zGame ? .35 : 1));   // 前兆中は出すぎないように
     // --- カットイン・擬似連の抽選（通常時のみ）---
-    state.cutin = state.at || state.battleGame || state.freezeGame || state.srGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
+    state.cutin = state.battleGame && state.battle && state.battle.game >= 5 && Math.random() < .5 ? pickCutin(state.battle.win ? 'BIG' : 'CHE')   // 最終決戦のカットイン
+      : state.at || state.battleGame || state.freezeGame || state.srGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(effHot));
     {
       let gs = 0;
       if(!state.at && !state.peka){
         if(state.battle && state.battle.game === 1 && state.preGisi) gs = state.preGisi;            // バトルに発展する擬似連
+        else if(state.zGame) gs = dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : (Math.random() < .4 ? pickGisi(hot) : 0);   // 前兆中の擬似連（煽り）
         else if(!state.battleGame && !state.freezeGame && !state.srGame && !isBig(hot))                              // 発展しない擬似連（ガセ）
           gs = state.gisiSolo ?? (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
       }
@@ -3641,7 +3820,7 @@
       state.lockUntil = Infinity;
       setTimeout(() => { if(state.sr && state.sr.type === 'icon' && state.sr.d.picked < 0) srIconPick(Math.floor(Math.random()*3)); }, autoOn ? 2000 : 9000);
     }
-    else if(state.gisi && !state.battle){
+    else if(state.gisi && !state.battle && !state.zGame){
       // 発展しなかった擬似連：最後の段のあとに「発展ならず…」
       const endAt = GISI_START + state.gisiDelay + (state.gisi - 1)*GISI_GAP + (state.gisi === 5 ? GISI5_HOLD : 1150);
       setTimeout(() => screen.gisiFail(), endAt);
@@ -3654,7 +3833,7 @@
 
     // --- ランプ（先ペカ／後ペカ）の抽選 ---
     state.postPeka = false;
-    if(isBig(hot) && !state.peka && !state.at && !state.battleGame && !state.freezeGame && !state.srGame){
+    if(isBig(hot) && !state.peka && !state.at && !state.battleGame && !state.freezeGame && !state.srGame && !state.zGame && !state.czHold){
       const pre = state.pvAccident || (dbg.peka ? dbg.peka === 'pre' : Math.random() < PRE_PEKA);
       state.pvAccident = false;
       if(pre){ state.aimGame = true; setTimeout(() => pekaOn('先ペカ'), 120); }
@@ -3663,6 +3842,14 @@
 
     clearWins();
     reels.forEach(r => { r.spinning = true; r.stopping = false; r.stopPos = null; r.slide = null; });
+    } catch(err){
+      // 想定外のエラーでも、ゲーム数だけ増えてリールが回らない状態にはしない（通常のゲームとして続行）
+      console.error('pull', err);
+      state.flag = state.flag ?? null; state.ctrlFlag = state.flag; state.navi = null;
+      state.scene = 'walk'; state.geki = false; state.cutin = null; state.gisi = 0; state.gisiDelay = 0;
+      state.lockUntil = 0; state.postPeka = false; state.freezeGame = false; state.freezeUntil = 0;
+      try { screen.start('walk', null); } catch(e){}
+    }
     state.phase = 'spinning';
     updateMap();
     applyReelSpeed();
@@ -3783,7 +3970,7 @@
       else state.sr.game++;
     }
     if(wasBattle && state.battle){
-      if(state.battle.game >= 5){ state.battlePending = true; setTimeout(battleResult, 500); }
+      if(state.battle.game >= 5){ state.battlePending = true; setTimeout(battleResult, 1300); }   // 一瞬の暗転の溜めをはさんで決着
       else state.battle.game++;
     }
     if(dupHit) state.carry = state.dupBig;   // 重複当選：次ゲームで7・BARを狙う
@@ -3813,6 +4000,9 @@
       state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
       if(state.at){ state.at.goal += AT_GOAL[flag]; }
       else state.at = {type:flag, goal:AT_GOAL[flag], paid:0};
+      // データ：履歴と天井カウンタ
+      (state.hist ||= []).unshift({type:flag, g:state.sinceBig || 0}); state.hist = state.hist.slice(0, 10);
+      state.bigs = (state.bigs || 0) + 1; state.sinceBig = 0; state.hiki = 0; screen.setHiki(0);
       if(state.freezeBonus){ state.at.goal += state.freezeBonus; state.freezeBonus = 0; setTimeout(() => setMsg(`フリーズ特典！ ボーナス+100枚（${state.at ? state.at.goal : ''}枚まで）`), 3400); }
       screen.setAT(state.at);
       screen.big(flag);
@@ -3833,6 +4023,12 @@
       // --- AT中 ---
       state.at.paid += total;
       screen.resultAT(total);
+      // 上乗せ：AT中のチェリーで抽選／特化ゾーン「ギター覚醒タイム」中は毎ゲーム
+      let add = 0;
+      if(state.at.zone > 0){ add += pick(ZONE_AMOUNTS); state.at.zone--; }
+      if(flag === 'CHE' && Math.random() < UWA_RATE) add += pick(UWA_AMOUNTS);
+      if(add){ state.at.goal += add; screen.atAdd(add, state.at.zone); sfx.uwanose(); }
+      if(!state.at.zone && Math.random() < ZONE_RATE){ state.at.zone = ZONE_GAMES; screen.atZone(); sfx.zoneIn(); setTimeout(() => setMsg('特化ゾーン「ギター覚醒タイム」突入！'), 300); }
       if(wins.length === 0) setMsg('はずれ');
       else if(state.replay){ setMsg('リプレイ'); sfx.replay(); }
       else { setMsg(`${SYM[wins[0].key].name}　${total}枚`); sfx.smallWin(); }
@@ -3866,7 +4062,7 @@
       if(state.czGame && state.cz){
         if(BIG.includes(flag) || dupHit) endCZ(true);       // 7・BAR当選でチャンスステージ終了（ボーナスへ）
         else czStep();
-      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && !wasBattle && !state.battle && !state.sr && !state.srPending && CZIN[flag]){
+      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && !wasBattle && !state.battle && !state.sr && !state.srPending && !state.zencho && !state.srBattle && CZIN[flag]){
         // 小役で7・BARの抽選に外れたとき、チャンスステージへの移行を抽選
         if(debugSettings().czIn === 'on' || Math.random() < CZIN[flag]){ state.czPending = true; setTimeout(enterCZ, 700); }
       }
@@ -3874,7 +4070,13 @@
     if(bigHit && state.cz) endCZ(true);
     state.dupBig = null;
     save(); updateUI();
+    if(state.routeCZ && !state.at){ state.routeCZ = false; state.czPending = true; setTimeout(enterCZ, 700); }
+    // 前兆の始まり：次回予告で合図（予告だけ見せる）
+    if(state.zencho && state.zencho.first && !state.at){ state.zencho.first = false;
+      if(Math.random() < .5){ const pv = buildPreview(state.zencho.big ? 'S7' : 'CHE'); if(pv.kind === 'battle' || pv.kind === 'accident') pv.kind = 'thumb';
+        state.previewUntil = performance.now() + 600 + PV_DUR; setTimeout(() => { screen.preview(pv); sfx.preview(pv); }, 600); } }
     if(!state.at) maybePreview();
+    recordData();
     // スキップ予約があれば、このゲームが止まった直後にその場で実行（以前は0.5秒後だったため、
     // その間に次のゲームが始まると予約が流れてしまうことがあった）
     if(state.skipQueued && state.at) skipAT();
@@ -3893,6 +4095,11 @@
     save(); updateUI();
   }
   function endCZ(win, reason = ''){
+    if(state.czStock){
+      // 昇格前にチャンスステージが終わったら、次のゲームで昇格バトルへ（大当たりで終わったときはストック）
+      if(win) stockPush(state.czStock.big); else state.srBattle = {type:null, win:true, big:state.czStock.big, promo:true};
+      state.czStock = null;
+    }
     const played = state.cz ? state.cz.played || 0 : 0;
     state.cz = null; screen.setCZ(null);
     if(!win) net.send('czend', played);   // 大当たりで終わったときは「大当たり」のお知らせだけ
@@ -3963,6 +4170,9 @@
       const pay = (f && (f.startsWith('OJ') || f === 'GRP')) ? PAY.GRP : f === 'CHE' ? PAY.CHE : 0;
       if(f === 'RPL') state.replay = true;
       state.at.paid += pay; state.credits += pay; state.coinOut += pay;
+      if(state.at.zone > 0){ state.at.goal += pick(ZONE_AMOUNTS); state.at.zone--; }
+      if(f === 'CHE' && Math.random() < UWA_RATE) state.at.goal += pick(UWA_AMOUNTS);
+      if(!state.at.zone && Math.random() < ZONE_RATE) state.at.zone = ZONE_GAMES;
     }
     state.games += games;
     state.skipQueued = false; $('skipBtn').classList.remove('queued'); $('skipBtn').textContent = 'SKIP ▶▶';
@@ -4088,7 +4298,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031958';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610032125';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -4146,6 +4356,35 @@
     save(); updateUI();
   });
   $('chargeClose').addEventListener('click', () => showCharge(false));
+
+  // ================================================================
+  // データ：総ゲーム数・ボーナス回数・合成確率・天井まで・差枚グラフ・履歴
+  // ================================================================
+  function recordData(){
+    (state.diffLog ||= []).push(state.coinOut - state.coinIn);
+    if(state.diffLog.length > 600) state.diffLog = state.diffLog.filter((_, i) => i % 2 === 0);   // 長くなったら間引く
+  }
+  function renderData(){
+    if(!$('dataBox').open) return;
+    $('dGames').textContent = state.games;
+    $('dBigs').textContent = state.bigs || 0;
+    $('dRate').textContent = state.bigs ? `1/${(state.games / state.bigs).toFixed(1)}` : '-';
+    $('dCeil').textContent = `${Math.max(0, CEILING - (state.sinceBig || 0))}G`;
+    const diff = state.coinOut - state.coinIn; $('dDiff').textContent = (diff >= 0 ? '+' : '') + diff;
+    $('dStock').textContent = (state.stock || []).length;
+    $('dHist').innerHTML = (state.hist || []).map((h, i) => `<li>${h.type === 'S7' ? '7揃い' : 'BAR揃い'}（${h.g}G）</li>`).join('') || '<li>まだありません</li>';
+    const cv = $('dGraph'), c = cv.getContext('2d'), d = state.diffLog || [];
+    c.clearRect(0,0,cv.width,cv.height);
+    if(d.length > 1){
+      const max = Math.max(50, ...d.map(Math.abs)), mid = cv.height/2;
+      c.strokeStyle = '#4A2A1A'; c.beginPath(); c.moveTo(0, mid); c.lineTo(cv.width, mid); c.stroke();
+      c.strokeStyle = '#FFD23A'; c.lineWidth = 3; c.beginPath();
+      d.forEach((v, i) => { const x = i/(d.length - 1)*cv.width, y = mid - v/max*(mid - 8); i ? c.lineTo(x, y) : c.moveTo(x, y); });
+      c.stroke();
+    }
+  }
+  $('dataBox').addEventListener('toggle', renderData);
+  setInterval(renderData, 1000);
 
   // ステージ切り替えボタン：押すたびに 1→2→3→4→1 と切り替え（強制移行までのゲーム数も数え直す）
   const STAGE_NAMES = {1:'配信部屋', 2:'ゲーム部屋', 3:'バーラウンジ', 4:'実家'};
@@ -4208,6 +4447,15 @@
     screen.atEnd(info);
     $('topper').classList.remove('party');
     setTimeout(() => { sfx.atEnd(); setMsg(`AT終了！ 獲得 ${info.paid}枚`); }, 400);
+    // 設定示唆：店長のひとこと
+    setTimeout(() => screen.say(settingHint(), ['🏪', '店長']), 1300);
+    if(state.stock && state.stock.length){
+      // 保留していた当たり（ストック）を放出
+      setTimeout(() => { if(state.at || state.peka) return; state.carry = state.stock.shift(); setMsg('ストック放出!!'); pekaOn('ストック'); save(); updateUI(); }, 2400);
+    } else {
+      state.hiki = HIKI_GAMES; screen.setHiki(state.hiki);
+      setTimeout(() => { if(!state.at) setMsg(`引き戻しチャンス！ ${HIKI_GAMES}ゲーム`); }, 2600);
+    }
   }
 
   // デバッグ設定（パネルを開いている間だけ有効）
@@ -4218,7 +4466,9 @@
     const f = $('fFlag').value, s = $('fScene').value, p = $('fPeka').value, a = $('fAim').value, k = $('fGeki').value;
     const cu = $('fCut').value, gs = $('fGisi').value, du = $('fDup').value, cz = $('fCz').value;
     const bt = $('fBattle').value, en = $('fEnemy').value, pvw = $('fPreview').value, fz = $('fFreeze').value, srv = $('fSr').value, srw = $('fSrWin').value;
+    const rt = $('fRoute').value;
     return {
+      route: rt === 'auto' ? null : rt,
       sr: srv === 'auto' ? null : srv,
       srWin: srw === 'auto' ? null : srw,
       preview: pvw === 'auto' ? null : pvw,
@@ -4293,6 +4543,8 @@
     if(state.cz){ state.cz = null; screen.setCZ(null); }
     state.nextDraw = null; state.pvAccident = false; state.previewUntil = 0;
     state.sr = null; state.srBattle = null; state.srPending = false; screen.srEnd();
+    state.zencho = null; state.czStock = null; state.stock = []; state.hiki = 0; state.sinceBig = 0; state.bigs = 0; state.hist = []; state.diffLog = [];
+    screen.setZen(null); screen.setHiki(0);
     if(state.battle){ state.battle = null; screen.battleEnd(); }
     state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
     Object.assign(state, {credits:100, games:0, coinIn:0, coinOut:0, carry:null, payout:0, replay:false, flag:null, scene:null, postPeka:false, pekaType:'-'});
@@ -4323,6 +4575,8 @@
   if(state.peka){ state.pekaType = '持ち越し'; setPeka(true); if(state.carry) screen.setAim(state.carry); }
   if(state.cz && !state.at){ state.cz = {left:state.cz.left, played:state.cz.played || 0, set:state.cz.set || 1, cont:state.cz.cont ?? null}; screen.setCZ(state.cz); }
   screen.setStage(state.stage);
+  if(state.zencho) screen.setZen(state.zencho);
+  if(state.hiki) screen.setHiki(state.hiki);
   // 特殊リーチの途中で閉じた場合：保留中の当たりがあれば、そのままペカらせる
   if(saved && saved.sr && saved.sr.big && !state.at && !state.carry){ state.carry = saved.sr.big; state.pekaType = '持ち越し'; setPeka(true); screen.setAim(state.carry); }
   if(state.battle && !state.at) screen.battleRestore(state.battle);

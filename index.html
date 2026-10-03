@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610031958">
+<link rel="stylesheet" href="css/style.css?ver=202610032125">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -67,6 +67,19 @@
   </div>
   <div class="msg" id="msg" aria-live="polite">制御テーブルを準備中…</div>
 
+  <details class="data" id="dataBox">
+    <summary>データ</summary>
+    <div class="data-grid">
+      <div><span>総ゲーム数</span><b id="dGames">0</b></div>
+      <div><span>ボーナス</span><b id="dBigs">0</b></div>
+      <div><span>合成確率</span><b id="dRate">-</b></div>
+      <div><span>天井まで</span><b id="dCeil">-</b></div>
+      <div><span>差枚</span><b id="dDiff">0</b></div>
+      <div><span>ストック</span><b id="dStock">0</b></div>
+    </div>
+    <canvas id="dGraph" width="600" height="160" aria-label="差枚グラフ"></canvas>
+    <ol class="data-hist" id="dHist"></ol>
+  </details>
   <div class="ctrl">
     <button class="auto" id="autoBtn" aria-pressed="false">AUTO</button>
     <button class="staff" id="staffBtn" hidden>🙋 店員アシスト</button>
@@ -114,6 +127,8 @@
         <option value="auto">自動</option><option value="on">発生（種類は自動）</option><option value="icon">アイコン詐欺</option><option value="audition">リスナーオーディション</option><option value="carriage">かぼちゃの馬車</option><option value="family">ファミリー集結</option><option value="house">コウジ、家を買う</option><option value="hashiguchi">なんだ橋口か</option></select></label>
       <label>特殊リーチの結果<select id="fSrWin">
         <option value="auto">自動</option><option value="win">成功</option><option value="lose">失敗</option></select></label>
+      <label>告知ルート（7・BAR当選時）<select id="fRoute">
+        <option value="auto">自動</option><option value="instant">即ペカ</option><option value="zencho">前兆→リーチ</option><option value="cz">チャンスステージ経由</option><option value="freeze">フリーズ</option><option value="gasa">ハズレでもガセ前兆</option></select></label>
       <label>目押し<select id="fAim">
         <option value="off">アシストなし</option><option value="flag">当選役を狙う</option><option value="seven">7を狙う</option></select></label>
     </div>
@@ -155,6 +170,8 @@
   <p class="note">バトルリーチ：5ゲームの連続演出。1ゲームごとに展開が進み、5ゲーム目の第3停止で決着。勝てば大当たり確定！ 種類は「通常バトル（拳銃を持った黒服）」「ラップバトル」「イベント出場（めざせ優勝）」「S6ライバー全員を倒せ」の4つで、後ろほど期待度が高め。バトル名の下の星が多いほどアツく、S6ライバー全員を倒せは虹色の星で大当たり確定。擬似連が続くとバトルに発展することも（発展しないこともあります）。途中でやられても逆転することも。</p>
   <p class="note">次回予告：ゲームの終わりに「次回配信のお知らせ」が出たら、次のゲームに注目。タイトル・サムネの色・出演者・日時・コメントの数でアツさが変わります（虹色・アルマンド・覚醒町田さんは確定）。タイトルの書き換え、シルエットの出演者、バトル予告、放送事故（プレミア）もあり。</p>
   <p class="note">特殊リーチ：アイコン詐欺（タップして見破れ）、リスナーオーディション（日跨ぎスタメン全員「いけます！」で大当たり）、かぼちゃの馬車に乗り込め（5ゲーム以内）、ファミリー集結（20人でバトル発展）、コウジ、家を買う（審査通過でチャンス）、誰かが配信に遊びに来た！（ゲボリスナーが2人続いたあと、3人目が橋口ならバトル発展）。</p>
+  <p class="note">7・BARに当選しても、すぐに教えるとは限りません。多くは「前兆」（画面が紫に染まりコメントがざわつく）→ カットインや擬似連で煽り → バトルや特殊リーチの決着で告知されます。チャンスステージ中に「昇格」してバトルになることも。</p>
+  <p class="note">ボーナス中はチェリーで上乗せ、特化ゾーン「ギター覚醒タイム」なら毎ゲーム上乗せ。ボーナス後10ゲームは引き戻しチャンス（当たりやすい）。通常時666ゲームで天井（S6ライバー戦で救済）。終了画面の店長のひとことは設定示唆かも…？</p>
   <p class="note">フリーズ（プレミア）：レバーを押した瞬間にリールがガタガタ揺れて暗転したら…逆回転のあと、パトランプが降りてきます。押せば大当たり確定＆ボーナス100枚上乗せ！</p>
   <p class="note">大当たり確定後に5回揃えられなかったら「店員アシスト」ボタンが出ます。押すと店員さんが代わりに目押しして揃えてくれます。</p>
   <p class="note">大当たり確定時は液晶に「777を狙え！！」などの告知が出ます。レバー後に擬似連（①追いハート→②追い花火→③追い魔法のお城→④追い馬車→⑤追いメガポコナイト）が続くほどチャンス。擬似連ではおじいちゃんが「おーーい！」と登場し、段が進むごとに大きくなります。リール回転開始時のカットインは緑「ねぇええええ」＜赤「燃やすよぉ〜」＜虹「アルマンド〜」（虹は確定）。ボーナス中はドレスのキャラが登場します。AT中は液晶右下のSKIPで残りを消化できます。</p>
@@ -206,6 +223,6 @@
   <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610031958"></script>
+<script src="js/main.js?ver=202610032125"></script>
 </body>
 </html>
