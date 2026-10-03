@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031238', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031238', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031238', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031242', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031242', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031242', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -783,45 +783,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031238';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031242';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031238';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031242';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031238';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031242';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031238';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031242';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031238';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031242';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031238';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031242';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031238';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031242';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031238';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031242';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031238';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031242';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031238';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031242';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031238';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031242';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031238';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031242';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031238';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031242';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1105,6 +1105,17 @@
       S.fireworks = S.fireworks.filter(p => p.life > 0);
       for(const p of S.fireworks){ p.x += p.vx; p.y += p.vy; p.vy += .02; p.life -= .018;
         g.fillStyle = `hsla(${p.hue},100%,65%,${p.life})`; g.fillRect(p.x, p.y, 2, 2); }
+    }
+    // 「BIG WIN!!」：虹色の極太・斜体（パチスロ風）
+    function drawBigWin(t){
+      g.save(); g.translate(W/2, 60); g.scale(1 + .05*Math.sin(t/110), 1 + .05*Math.sin(t/110)); g.transform(1, 0, -.18, 1, 0, 0);
+      g.font = '38px "Titan One", Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.lineWidth = 10; g.strokeStyle = '#2a0010'; g.strokeText('BIG WIN!!', 0, 0);
+      g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText('BIG WIN!!', 0, 0);
+      const gr = g.createLinearGradient(-130, 0, 130, 0), o = (t/4) % 360;
+      for(let k=0;k<=6;k++) gr.addColorStop(k/6, `hsl(${(o + k*55) % 360},100%,58%)`);
+      g.shadowColor = '#FFD23A'; g.shadowBlur = 14; g.fillStyle = gr; g.fillText('BIG WIN!!', 0, 0);
+      g.restore();
     }
     function drawText(text, y, size, color='#fff', glow='#ff3ea5'){
       g.save(); g.textAlign = 'center'; g.font = `${size}px Limelight, serif`;
@@ -2056,7 +2067,7 @@
         drawConfirmStage(t);
         g.fillStyle = 'rgba(30,0,30,.25)'; g.fillRect(0,0,W,H);
         drawFireworks(t);
-        drawText(S.bigKey === 'S7' ? 'JACKPOT!!' : 'BIG WIN!', 58, 32, '#fff3b0');
+        drawBigWin(t);
         if(Math.random() < .08) comment(pick(TALK.win));
         if(Math.random() < .3) hearts(1, true);
         drawUI(t); return;
@@ -2776,7 +2787,7 @@
     }, big ? 22 : 45);
   }
   function showBigWin(key){
-    $('bwText').textContent = key === 'S7' ? 'JACKPOT!!' : 'BIG WIN!';
+    $('bwText').textContent = 'BIG WIN!!';
     $('bwAmount').textContent = `AT ${AT_GOAL[key]}枚`;
     setTimeout(sfx.atStart, 1900);
     setTimeout(hideBigWin, 3200);
@@ -3394,7 +3405,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031238';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031242';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
