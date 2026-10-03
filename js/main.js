@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610030401', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610030401', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610030401', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031228', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031228', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031228', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -479,9 +479,27 @@
     czStrong(){ audio.noise(0,.2,.3,800); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.05 + k*.06,.2,{type:'square',vol:.07})); },
     czCont(){ [523,659,784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'triangle',vol:.1})); [0,.15,.3].forEach(a=>audio.noise(.5 + a,.3,.15,1800)); },
     notify(){ audio.tone(1568,0,.12,{type:'sine',vol:.07}); audio.tone(2093,.1,.18,{type:'sine',vol:.07}); },
+    battleStart(){ audio.noise(0,.6,.5,180); audio.tone(98,0,.9,{type:'sawtooth',vol:.18,to:60}); [392,523,659].forEach((f,k)=>audio.tone(f,.35 + k*.12,.3,{type:'square',vol:.07})); },
+    battleHit(who){ audio.noise(0,.12,.25,3000,'highpass'); audio.noise(.28,.12,.5,500); audio.tone(who === 'hero' ? 330 : 180,.28,.18,{type:'square',vol:.12,to:80}); },
+    battleFinal(){ for(let k=0;k<16;k++) audio.noise(k*.06,.05,.12 + k*.015,700); },
+    battleClash(){ audio.noise(0,.7,.7,300); audio.tone(140,0,.7,{type:'sawtooth',vol:.2,to:40}); },
+    battleWin(){ [523,659,784,1047,1319].forEach((f,k)=>audio.tone(f,k*.09,.3,{type:'square',vol:.08})); },
+    battleComeback(){ audio.tone(220,0,.5,{type:'sawtooth',vol:.08,to:110}); [523,659,784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,1.1 + k*.07,.3,{type:'triangle',vol:.1})); },
+    battleLose(){ [392,330,262,196].forEach((f,k)=>audio.tone(f,k*.18,.35,{type:'triangle',vol:.09})); },
     staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
+    // 777確定：「キュインキュイン！」（ビブラートのかかった上昇音を4回）＋きらめき
+    kyuin777(){
+      for(let k=0;k<4;k++){
+        const at = k*.2;
+        audio.tone(600, at, .26, {type:'sine', vol:.16, to:3000, vib:60});
+        audio.tone(1200, at + .02, .22, {type:'square', vol:.03, to:5200});
+      }
+      [2637,3136,3520,4186].forEach((f,k)=>audio.tone(f, .85 + k*.06, .2, {type:'sine', vol:.06}));
+      [784,988,1175,1568].forEach(f=>audio.tone(f, .9, 1.2, {type:'triangle', vol:.07}));
+    },
+    cracker(){ audio.noise(0,.08,.6,5000,'highpass'); audio.noise(.02,.25,.25,1800); },
     // 大当たり確定：流れ星のきらめき → 上昇音 → 和音
     kakutei(){
       [3136,2637,2349,2093,1760].forEach((f,k)=>audio.tone(f,k*.05,.15,{type:'sine',vol:.06}));
@@ -558,6 +576,7 @@
     coinOut: saved ? saved.coinOut : 0,
     carry: saved ? saved.carry : null,
     cz: saved ? saved.cz || null : null, czGame: false,
+    battle: saved && saved.battle && saved.battle.type ? saved.battle : null, battleGame: false,
     stage: saved ? saved.stage || 1 : 1, dupBig: null,
     stageCount: saved ? saved.stageCount || 0 : 0, stageLimit: saved ? saved.stageLimit || 0 : 0,
     at: saved ? saved.at || null : null, navi: null, ctrlFlag: null,
@@ -574,7 +593,7 @@
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
-    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
+    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, battle:state.battle, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
 
   const reels = STRIPS.map((strip, i) => {
     const el = stripEls[i];
@@ -764,33 +783,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610030401';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031228';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610030401';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031228';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610030401';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031228';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610030401';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031228';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610030401';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031228';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610030401';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031228';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610030401';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031228';
+  // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
+  // 3行目 S6ライバー6人（通常）、4行目 同（KO）
+  const ENEMY_SPRITES = new Image();
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031228';
+  // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
+  const UNIV_BG = new Image();
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031228';
+  const MACHIDA = new Image();
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031228';
+  // 777確定の全画面演出に使うイラスト（縦長）
+  const K777 = new Image();
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031228';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610030401';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031228';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610030401';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031228';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -807,7 +838,8 @@
       aim:null, cut:null, cutT:-1e9, gisi:0, gisiT:-1e9, gisiFx:[], ooiT:-1e9,
       cz:null, czT:-1e9, czEndT:-1e9, pose:0, poseT:0,
       stg:1, stageT:-1e9, np:null, npCat:'', npT:0, pfx:[], kiaiT:-1e9,
-      czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false, players:null, bq:[], bcur:null, bT:0};
+      czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false, players:null, bq:[], bcur:null, bT:0,
+      bt:null, bAct:null, bhpView:[100,100]};
 
     function resize(){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -912,7 +944,7 @@
     }
 
     // --- 配信UI（LIVEバッジ・視聴者数・コメント・ハート）---
-    function drawUI(t){
+    function drawUI(t, noComments = false){
       g.save();
       g.fillStyle = '#FF2D55'; rrPath(g, 6, 6, 30, 13, 4); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 8.5px sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center';
@@ -933,7 +965,7 @@
       g.fillStyle = '#fff'; g.fillText('❤ ' + (S.likes >= 10000 ? (S.likes/10000).toFixed(1) + '万' : S.likes), W - 58, 13);
       // コメント欄（左下）
       const now = performance.now();
-      S.comments.forEach((m, i) => {
+      if(!noComments) S.comments.forEach((m, i) => {
         const y = H - 12 - (S.comments.length - 1 - i) * 13;
         const age = Math.min(1, (now - m.born)/200);
         const txt = `${m.name}  ${m.text}`;
@@ -1326,15 +1358,16 @@
     function spriteBox(img, idx){
       let boxes = boxCache.get(img);
       if(!boxes){
-        const W0 = img.naturalWidth, cell = W0 / 4, cv2 = document.createElement('canvas');
+        const G = img === MACHIDA ? 5 : 4;   // 覚醒町田さんだけ 5×5
+        const W0 = img.naturalWidth, cell = W0 / G, cv2 = document.createElement('canvas');
         cv2.width = W0; cv2.height = img.naturalHeight;
         const c2 = cv2.getContext('2d'); c2.drawImage(img, 0, 0);
         let data = null;
         try { data = c2.getImageData(0, 0, W0, img.naturalHeight).data; } catch(e){ /* ローカルで直接開いた場合など：枠そのままで描く */ }
         boxes = [];
-        if(!data){ for(let k=0;k<16;k++) boxes.push({x:(k % 4)*cell, y:Math.floor(k / 4)*cell, w:cell, h:cell}); boxCache.set(img, boxes); return boxes[idx]; }
-        for(let k=0;k<16;k++){
-          const ox = (k % 4)*cell, oy = Math.floor(k / 4)*cell;
+        if(!data){ for(let k=0;k<G*G;k++) boxes.push({x:(k % G)*cell, y:Math.floor(k / G)*cell, w:cell, h:cell}); boxCache.set(img, boxes); return boxes[idx]; }
+        for(let k=0;k<G*G;k++){
+          const ox = (k % G)*cell, oy = Math.floor(k / G)*cell;
           let x0 = cell, y0 = cell, x1 = 0, y1 = 0;
           for(let y=0;y<cell;y+=2) for(let x=0;x<cell;x+=2){
             if(data[((oy + y)*W0 + ox + x)*4 + 3] > 40){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
@@ -1534,6 +1567,213 @@
       if(Math.random() < .15) hearts(1, true);
     }
 
+    // ================================================================
+    // バトル画面（4種類）：左にコウジ、右に相手。種類ごとに見せ方が変わる
+    // ================================================================
+    const HERO_POSE = {ready:9, attack:4, damage:10, pinch:7, defeat:12, win:2, dash:14, mic:8};
+    const RAP_HERO = ['配信つけたら即満員 / 俺のトークは全部本音', 'ギフトより大事なリスナー / 今夜も回すぜスロッター',
+                      'ペカったランプで夜明けまで / お前の声はもう聞こえねぇ', '名古屋仕込みの勢いで / ランキング頂上一直線'];
+    const RAP_FOE  = ['自撮り棒で天下取り / お前の配信ただの素通り', 'ギフトの数ならこっちが上 / 見てろよすぐに頂上',
+                      'コメント欄はガラ空きだ / 寝言はベッドで言いな', 'マイクの握り方から出直しな / 勝負はもう決まりだな'];
+    const EVENT_RIVALS = ['ミラクルあゆ', 'しろくまP', 'よるのりん', 'ネオン姫', 'ゆめかわ亭'];
+    function enemyCell(row, col){ const img = ENEMY_SPRITES, cell = img.naturalWidth / 6; return [col*cell, row*cell, cell]; }
+    function drawFoe(row, pose, x, bottom, h, flash){
+      const img = ENEMY_SPRITES; if(!(img.complete && img.naturalWidth)) return;
+      const col = {idle:0, attack:1, damage:2, pinch:3, defeat:4, win:5}[pose];
+      const [sx, sy, cell] = enemyCell(row, col);
+      g.save(); g.translate(x, bottom); if(flash) g.filter = 'brightness(2.2)';
+      g.drawImage(img, sx, sy, cell, cell, -h/2, -h, h, h); g.restore();
+    }
+    function drawLiver(i, ko, x, bottom, h, a = 1){
+      const img = ENEMY_SPRITES; if(!(img.complete && img.naturalWidth)) return;
+      const [sx, sy, cell] = enemyCell(ko ? 3 : 2, i);
+      g.save(); g.globalAlpha *= a; g.translate(x, bottom);
+      g.drawImage(img, sx, sy, cell, cell, -h/2, -h, h, h); g.restore();
+    }
+    function drawHeroSprite(idx, x, bottom, h){
+      const sz = spriteSize(ST_A, idx, h, h*1.6);
+      g.save(); g.translate(x, bottom);
+      g.drawImage(ST_A, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -sz.w/2, -sz.h, sz.w, sz.h); g.restore();
+    }
+    // 覚醒町田さんで戦う（コウジ用のポーズ番号を、町田さんの近いポーズに置き換える）
+    const MACHIDA_FIGHT = {9:0, 4:6, 14:21, 10:9, 7:17, 12:14, 2:20, 8:24};
+    function drawMachidaFighter(heroPose, x, bottom, h){
+      if(!(MACHIDA.complete && MACHIDA.naturalWidth)) return;
+      const idx = MACHIDA_FIGHT[heroPose] ?? 0, sz = spriteSize(MACHIDA, idx, h, h*1.5);
+      g.save(); g.translate(x, bottom);
+      if(idx === 6 || idx === 21){ g.shadowColor = 'rgba(255,140,40,.9)'; g.shadowBlur = 14; }
+      g.drawImage(MACHIDA, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -sz.w/2, -sz.h, sz.w, sz.h); g.restore();
+    }
+    function bText(text, y, size, color, stroke = '#2a0018', x = W/2){
+      g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.font = `900 ${size}px "M PLUS 1p", sans-serif`; g.lineWidth = size*.22; g.strokeStyle = stroke;
+      g.strokeText(text, x, y); g.fillStyle = color; g.fillText(text, x, y); g.restore();
+    }
+    // 背景（種類ごと）
+    function drawBattleBg(type, t){
+      const pal = {gun:['#1a2a4a','#0a1020','#04060c'], rap:['#5a1a6a','#250a3a','#0a0418'], event:['#ffcf5a','#e0602a','#5a1030'], s6:['#ff9ad6','#b03a9a','#3a0a40']}[type];
+      const bg = g.createRadialGradient(W/2, 120, 10, W/2, 90, 220);
+      bg.addColorStop(0, pal[0]); bg.addColorStop(.6, pal[1]); bg.addColorStop(1, pal[2]);
+      g.fillStyle = bg; g.fillRect(0,0,W,H);
+      if(type === 'gun'){   // 夜の路地：ビルの影と雨
+        g.fillStyle = '#060a14'; [[0,40,40],[44,60,30],[80,30,26],[230,50,34],[268,26,52]].forEach(([x,y,w]) => g.fillRect(x, y, w, 140 - y));
+        g.fillStyle = 'rgba(255,220,120,.6)'; for(let k=0;k<14;k++) g.fillRect(6 + (k*23)%300, 50 + (k*37)%70, 3, 4);
+        g.strokeStyle = 'rgba(180,200,255,.25)'; g.lineWidth = 1;
+        for(let k=0;k<30;k++){ const x = (k*41 + t/6) % W, y = (k*53 + t/2) % H; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 3, y + 9); g.stroke(); }
+      } else {
+        g.save(); g.globalAlpha = type === 'event' ? .25 : .18; g.translate(W/2, 160); g.rotate(t/4000);
+        for(let i=0;i<12;i++){ g.rotate(Math.PI/6); g.fillStyle = i%2 ? '#FF4F8B' : (type === 'event' ? '#fff' : '#4FC8FF'); g.beginPath(); g.moveTo(0,0); g.lineTo(240,-20); g.lineTo(240,20); g.fill(); }
+        g.restore();
+        if(type === 'rap' || type === 'event'){   // 観客のシルエット
+          g.fillStyle = 'rgba(0,0,0,.55)';
+          for(let k=0;k<16;k++){ const x = 10 + k*20, bob = Math.abs(Math.sin(t/180 + k))*3; g.beginPath(); g.arc(x, 150 - bob, 8, 0, 6.283); g.fill(); g.fillRect(x - 9, 152 - bob, 18, 10); }
+        }
+        if(type === 's6') for(let k=0;k<10;k++) sparkle((k*37 + t/20) % W, 20 + (k*29) % 110, 2 + k%3, '#fff');
+      }
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 140, W, 20);
+      g.fillStyle = '#F2C14E'; g.fillRect(0, 140, W, 1.5);
+    }
+    function hpBars(b, foeName){
+      S.bhpView[0] += (b.hp[0] - S.bhpView[0]) * .08; S.bhpView[1] += (b.hp[1] - S.bhpView[1]) * .08;
+      const bar = (x, w, v, name, right) => {
+        g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, x, 23, w, 13, 6); g.fill();
+        const fw = (w - 4) * Math.max(0, v)/100, col = v > 50 ? '#5DFF8A' : v > 25 ? '#FFE14D' : '#FF4F4F';
+        g.fillStyle = col; rrPath(g, right ? x + w - 2 - fw : x + 2, 25, Math.max(4, fw), 9, 4); g.fill();
+        g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+        g.textAlign = right ? 'right' : 'left'; g.fillText(name, right ? x + w : x, 42);
+      };
+      bar(8, 138, S.bhpView[0], 'コウジ', false);
+      bar(174, 138, S.bhpView[1], foeName, true);
+    }
+    // イベント：ランキングボード
+    function drawRanking(b, t, highlight){
+      const rank = b.rankView;
+      const names = EVENT_RIVALS.slice(0, 4);
+      g.save(); g.fillStyle = 'rgba(20,0,30,.75)'; rrPath(g, 176, 22, 136, 112, 8); g.fill();
+      g.strokeStyle = '#F2C14E'; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = '#FFE14D'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.fillText('MACHIDA CUP ランキング', 244, 32);
+      let others = 0;
+      for(let r=1;r<=5;r++){
+        const y = 44 + (r-1)*18, me = r === rank;
+        g.fillStyle = me ? (highlight ? `hsl(${(t/4)%360},90%,55%)` : '#FF4F8B') : 'rgba(255,255,255,.1)';
+        rrPath(g, 182, y - 7, 124, 15, 5); g.fill();
+        g.fillStyle = r === 1 ? '#FFE14D' : '#fff'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textAlign = 'left';
+        g.fillText(`${r}位`, 188, y + 1);
+        g.fillText(me ? 'コウジ' : names[others++] || '', 214, y + 1);
+        if(r === 1) g.fillText('👑', 288, y + 1);
+      }
+      g.restore();
+    }
+    function drawBattle(t){
+      const b = S.bt, A = S.bAct, ae = A ? t - A.t0 : 1e9, type = b.type;
+      drawBattleBg(type, t);
+      const foeName = BATTLES[type].foe;
+      // 見せ方の共通部分
+      let hx = 78, fx = 242, hp = b.hp[0] < 35 ? HERO_POSE.pinch : HERO_POSE.ready, fp = b.hp[1] < 35 ? 'pinch' : 'idle';
+      let flashF = false, shakeH = 0, shakeF = 0, overlay = 0, txt = null, bubble = null;
+      b.rankView = b.rankView ?? b.rank; b.aliveView = b.aliveView ?? b.alive;
+      if(A && (A.type === 'hero' || A.type === 'enemy') && ae < 2200){
+        const lunge = ae < 300 ? ae/300 : ae < 600 ? 1 : Math.max(0, 1 - (ae - 600)/400);
+        const hit = ae >= 300 && ae < 700;
+        if(type === 'rap'){
+          const lines = A.type === 'hero' ? RAP_HERO : RAP_FOE;
+          bubble = {side:A.type, text:lines[A.dmg % lines.length]};
+          if(A.type === 'hero'){ hp = HERO_POSE.mic; if(hit){ fp = 'damage'; shakeF = 3; } }
+          else { fp = 'attack'; if(hit){ hp = HERO_POSE.damage; shakeH = 3; } }
+          txt = A.type === 'hero' ? 'コウジのバース！' : 'MCギフトのバース！';
+        } else if(type === 'event'){
+          hp = A.type === 'hero' ? HERO_POSE.win : HERO_POSE.damage;
+          txt = A.type === 'hero' ? '↑ ランクアップ！' : '↓ ランクダウン…';
+          if(ae > 400) b.rankView = A.snap.rank;
+        } else if(type === 's6'){
+          if(A.type === 'hero'){ hx += lunge*60; hp = HERO_POSE.dash; txt = `${A.dmg}人撃破！`; if(ae > 400) b.aliveView = A.snap.alive; }
+          else { hp = HERO_POSE.damage; shakeH = hit ? 4 : 0; txt = 'キャー！囲まれた！'; }
+        } else {   // 通常バトル（黒服・拳銃）
+          if(A.type === 'hero'){ hx += lunge*70; hp = HERO_POSE.attack; if(hit){ fp = 'damage'; shakeF = 4; flashF = ae < 380; overlay = Math.max(0, 1 - (ae-300)/250); } txt = 'コウジの攻撃！'; }
+          else { fp = 'attack'; if(hit){ hp = HERO_POSE.damage; shakeH = 4; } txt = '黒服の銃撃！';
+            if(ae > 250 && ae < 700){ sparkle(fx - 62, 108, 14, '#FFE14D'); bText('BANG!', 92, 14, '#FF2D2D', '#000', fx - 80); } }
+        }
+        if(type !== 'event' && type !== 's6' && ae >= 300 && ae < 1300){ g.save(); g.globalAlpha = Math.min(1, (1300 - ae)/300); bText(`-${A.dmg}`, 70 - (ae-300)/30, 16, '#FFE14D'); g.restore(); }
+        if(type === 'gun' || type === 'rap'){ if(ae > 300) b.hp = A.snap.hp; }
+      }
+      if(A && A.type === 'intro'){
+        const k = Math.min(1, ae/500);
+        hx = -60 + k*138; fx = W + 60 - k*138;
+        if(ae > 300 && ae < 1800) txt = BATTLES[type].name;
+      }
+      if(A && A.type === 'final'){
+        txt = ae < 1600 ? ({event:'結果発表！', s6:'ラスト勝負！'}[type] || '最終決戦！') : null;
+        hp = HERO_POSE.attack; fp = 'attack';
+        const aura = .4 + .3*Math.sin(t/80); g.save(); g.globalAlpha = aura; g.fillStyle = '#FFE14D'; g.beginPath(); g.ellipse(hx, 110, 40, 50, 0, 0, 6.283); g.fill(); g.restore();
+      }
+      if(A && A.type === 'clash'){
+        const k = Math.min(1, ae/350); if(type !== 'event'){ hx += k*58; fx -= k*58; } hp = HERO_POSE.attack; fp = 'attack';
+        overlay = ae > 350 ? Math.max(0, 1 - (ae - 350)/600) : 0;
+        txt = ae > 350 ? (type === 'event' ? '集計中…' : '決着…！') : null;
+      }
+      let resWin = null;
+      if(A && A.type === 'result'){
+        resWin = A.win;
+        if(A.win){
+          if(A.comeback && ae < 1100){ hp = HERO_POSE.defeat; fp = 'win'; txt = ae < 700 ? 'やられた…!?' : null; }
+          else { hp = HERO_POSE.win; fp = 'defeat';
+            txt = A.comeback && ae < 1900 ? '復活!! 逆転勝利!!' : ({event:'優勝!!', s6:'全員撃破!!', rap:'WINNER!!'}[type] || 'WIN!!');
+            b.rankView = 1; b.aliveView = 0;
+            if(Math.random() < .5) S.gisiFx.push({kind:'heart', x:Math.random()*W, y:160, vx:(Math.random()-.5), vy:-2 - Math.random()*1.5, s:4 + Math.random()*3, life:1}); }
+          if(A.comeback && ae > 1100 && ae < 1400) overlay = 1 - (ae - 1100)/300;
+        } else { hp = HERO_POSE.defeat; fp = 'win'; txt = ({event:'2位…', s6:'敗北…', rap:'LOSE…'}[type] || 'LOSE…'); b.rankView = 2; }
+      }
+      // ---- 描画：種類ごとの右側 ----
+      if(type === 'gun' || type === 'rap'){
+        hpBars(b, foeName);
+        drawFoe(type === 'gun' ? 0 : 1, fp, fx + (Math.random()-.5)*shakeF, 152, 96, flashF);
+        if(type === 'rap' && fp === 'attack') for(let i=0;i<3;i++){ g.strokeStyle = '#FF4F8B'; g.lineWidth = 3; g.beginPath(); g.arc(fx - 40, 100, 14 + i*10 + (t/40 % 10), Math.PI*.7, Math.PI*1.3); g.stroke(); }
+      } else if(type === 'event'){
+        drawRanking(b, t, resWin === true);
+      } else {   // S6：残っているライバーを並べる
+        const alive = resWin === true ? 0 : resWin === false ? 6 : b.aliveView;
+        g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 222, 22, 92, 15, 7); g.fill();
+        g.fillStyle = '#FFE14D'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(`S6ライバー 残り${alive}人`, 268, 30); g.restore();
+        const pos = [[200,118],[236,112],[272,118],[300,112],[218,152],[260,154]];
+        for(let i=0;i<6;i++){
+          const ko = i >= alive, [x, y] = pos[i];
+          const bob = ko ? 0 : Math.abs(Math.sin(t/200 + i))*3;
+          drawLiver(i, ko, x + (A && A.type === 'enemy' && !ko ? -Math.min(1, ae/300)*20 : 0), y - bob, 46, ko ? .55 : 1);
+        }
+      }
+      if(type === 's6') drawMachidaFighter(hp, hx + (Math.random()-.5)*shakeH, 152, 96);   // S6ライバー戦は覚醒町田さん
+      else drawHeroSprite(hp, hx + (Math.random()-.5)*shakeH, 150, 84);
+      drawGisi(t);
+      // ラップの吹き出し
+      if(bubble){
+        const lines = bubble.text.split(' / ');
+        g.save(); g.font = 'bold 9px "M PLUS 1p", sans-serif';
+        const w = Math.max(...lines.map(l => g.measureText(l).width)) + 16, x = bubble.side === 'hero' ? 8 : W - 8 - w;
+        g.fillStyle = 'rgba(255,255,255,.95)'; rrPath(g, x, 56, w, 30, 8); g.fill();
+        g.strokeStyle = bubble.side === 'hero' ? '#FF4F8B' : '#7A3DD6'; g.lineWidth = 2; g.stroke();
+        g.fillStyle = '#2a0018'; g.textBaseline = 'middle'; g.textAlign = 'left';
+        lines.forEach((l, k) => g.fillText(l, x + 8, 65 + k*12));
+        g.restore();
+      }
+      if(overlay > 0){ g.fillStyle = `rgba(255,255,255,${overlay*.85})`; g.fillRect(0,0,W,H); }
+      if(txt){
+        const big = /WIN|優勝|撃破!!|復活|WINNER/.test(txt) && A && A.type === 'result';
+        const col = resWin === false ? '#9FB8FF' : big ? '#FFE14D' : '#fff';
+        const p = 1 + .05*Math.sin(t/90), y = bubble ? 98 : 64;
+        const cx = (type === 'event' || type === 's6') ? 92 : W/2;   // 右側にボードや人がいる種類は左寄せ
+        g.save(); g.translate(cx, y); g.scale(p, p); g.translate(-cx, -y);
+        bText(txt, y, big ? 22 : 14, col, '#2a0018', cx); g.restore();
+      }
+      // タイトルとラウンド
+      if(!A || A.type !== 'result'){
+        const tx = (type === 'event' || type === 's6') ? 86 : W/2;
+        g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, tx - 78, 44, 156, 13, 6); g.fill();
+        g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(`${BATTLES[type].name}　${b.game >= 5 ? 'FINAL' : `ROUND ${b.game}/5`}`, tx, 50.5); g.restore();
+      }
+    }
+
     // ほかのプレイヤーのお知らせ：液晶上部を右から左へ流れる帯
     function drawBroadcast(t){
       if(!S.bcur && S.bq.length){ S.bcur = S.bq.shift(); S.bT = t; }
@@ -1691,7 +1931,53 @@
     }
 
     // --- AT：イベント配信モード ---
+    // 777ボーナス：Machida Universe のライブ会場で、覚醒町田さんがギター・炎の剣で魅せる
+    const MPOSE = {
+      idle:  [0, 1, 3, 7, 9, 13, 14, 16, 17, 22, 4, 10],
+      play:  [2, 8, 18, 24, 5],                 // ギター
+      fire:  [6, 12, 15, 19, 21, 23],           // 炎の剣
+      happy: [3, 11, 20, 8]                     // ピース・笑顔・ガッツポーズ
+    };
+    const MPOSE_FX = {6:'fire', 12:'fire', 15:'fire', 19:'fire', 21:'fire', 23:'fire', 2:'notes', 8:'notes', 18:'notes', 24:'notes', 5:'notes', 20:'confetti', 11:'hearts', 3:'sparkle'};
+    function machidaPose(cat, t){
+      const list = MPOSE[cat]; let p; do { p = pick(list); } while(list.length > 1 && p === S.mp);
+      S.mp = p; S.mpCat = cat; S.mpT = t;
+    }
+    function drawUniverse(t){
+      if(UNIV_BG.complete && UNIV_BG.naturalWidth){
+        // ゆっくりズームしながら左右に流す
+        const z = 1.08 + .05*Math.sin(t/7000), bw = W*z, bh = H*z;
+        const ox = (W - bw)/2 + Math.sin(t/9000)*8, oy = (H - bh)/2;
+        g.drawImage(UNIV_BG, ox, oy, bw, bh);
+      } else { g.fillStyle = '#1a1a6a'; g.fillRect(0,0,W,H); }
+      // ステージライトの明滅と、手前を少し暗くして主役を目立たせる
+      g.save(); g.globalAlpha = .12 + .08*Math.sin(t/300); g.fillStyle = '#9fd8ff'; g.fillRect(0,0,W,H); g.restore();
+      const vg = g.createLinearGradient(0, 70, 0, H); vg.addColorStop(0, 'rgba(10,0,40,0)'); vg.addColorStop(1, 'rgba(10,0,40,.55)');
+      g.fillStyle = vg; g.fillRect(0, 70, W, H - 70);
+      for(let k=0;k<8;k++){ const x = (k*47 + t/25) % W, y = 10 + (k*31) % 60; g.globalAlpha = .5 + .5*Math.sin(t/200 + k); sparkle(x, y, 2 + k%3, '#fff'); }
+      g.globalAlpha = 1;
+    }
+    function drawMachida(t){
+      const spin = S.mode === 'spin', gained = S.gain > 0 && t - S.gainT < 1400;
+      const cat = gained ? 'happy' : spin ? (Math.floor(t/2600) % 2 ? 'fire' : 'play') : 'idle';
+      if(S.mp === undefined || S.mpCat !== cat || (cat === 'idle' && t - S.mpT > 3200)) machidaPose(cat, t);
+      if(!(MACHIDA.complete && MACHIDA.naturalWidth)) return;
+      const sz = spriteSize(MACHIDA, S.mp, 122, 220), pe = t - S.mpT;
+      const pop = pe < 240 ? 1 + .05*Math.sin(pe/240*Math.PI) : 1;
+      const beat = t/1000*132/60, rot = Math.sin(beat*Math.PI)*.03, hop = cat === 'happy' ? Math.abs(Math.sin(t/150))*8 : Math.abs(Math.sin(beat*Math.PI))*2;
+      const tag = MPOSE_FX[S.mp];
+      if(tag === 'fire'){ g.save(); g.globalAlpha = .35 + .2*Math.sin(t/60); const fg = g.createRadialGradient(W/2, 110, 10, W/2, 110, 120);
+        fg.addColorStop(0, 'rgba(255,160,40,.9)'); fg.addColorStop(1, 'rgba(255,60,0,0)'); g.fillStyle = fg; g.fillRect(0,0,W,H); g.restore(); }
+      const dw = sz.w*pop, dh = sz.h*pop;
+      g.save(); g.translate(W/2, 158 - hop); g.rotate(rot);
+      g.shadowColor = tag === 'fire' ? 'rgba(255,140,40,.9)' : 'rgba(180,220,255,.8)'; g.shadowBlur = 16;
+      g.drawImage(MACHIDA, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -dw/2, -dh, dw, dh); g.restore();
+      if(tag) poseFx(tag, t, W/2, 158 - dh, dh);
+      drawPoseFx();
+    }
+
     function drawAT(t){
+      if(S.at.type === 'S7'){ drawUniverse(t); drawATHud(t); if(!S.navi || S.mode !== 'spin') drawMachida(t); drawGisi(t); drawATGain(t); return; }
       const sk = g.createLinearGradient(0,0,0,H);
       sk.addColorStop(0,'#3a0a5a'); sk.addColorStop(1,'#b0145a');
       g.fillStyle = sk; g.fillRect(0,0,W,H);
@@ -1699,40 +1985,39 @@
       for(let k=0;k<16;k++){ g.rotate(Math.PI/8); g.fillStyle = k%2 ? 'rgba(255,215,90,.10)' : 'rgba(255,120,200,.09)';
         g.beginPath(); g.moveTo(0,0); g.lineTo(260,-30); g.lineTo(260,30); g.fill(); }
       g.restore();
-      const at = S.at, left = Math.max(0, at.goal - at.paid);
-      g.save(); g.textBaseline = 'middle';
-      g.fillStyle = at.type === 'S7' ? '#D8192F' : '#161616'; g.strokeStyle = '#F2C14E'; g.lineWidth = 2;
-      rrPath(g, 6, 24, 86, 18, 5); g.fill(); g.stroke();
-      g.fillStyle = '#fff3b0'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textAlign = 'center';
-      g.fillText(at.type === 'S7' ? '7 イベント配信' : 'BAR イベント配信', 49, 33);
-      g.textAlign = 'right'; g.font = '9px "M PLUS 1p", sans-serif'; g.fillStyle = '#ffd1ea'; g.fillText('残り', W - 64, 34);
-      g.font = '20px DotGothic16, monospace'; g.fillStyle = '#fff'; g.shadowColor = '#ff3ea5'; g.shadowBlur = 8;
-      g.fillText(left, W - 22, 33); g.font = '9px "M PLUS 1p", sans-serif'; g.fillText('枚', W - 8, 34);
-      g.restore();
-      g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(6, H - 8, W - 12, 4);
-      g.fillStyle = '#F2C14E'; g.fillRect(6, H - 8, (W - 12) * Math.min(1, at.paid / at.goal), 4);
-
-      if(S.navi && S.mode === 'spin'){
-        g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.font = 'bold 12px "M PLUS 1p", sans-serif'; g.fillStyle = '#fff'; g.fillText('押し順ナビ', W/2, 56);
-        const next = S.navi[S.stage];
-        S.navi.forEach((reel, n) => {
-          const x = W*(1 + reel*2)/6, y = 84, on = reel === next, done = n < S.stage;
-          const pulse = on ? 1 + .1*Math.sin(t/80) : 1;
-          g.save(); g.translate(x, y); g.scale(pulse, pulse);
-          g.fillStyle = done ? 'rgba(255,255,255,.15)' : on ? '#ffe14d' : 'rgba(255,255,255,.85)';
-          if(on){ g.shadowColor = '#ffd23a'; g.shadowBlur = 16; }
-          g.beginPath(); g.arc(0, 0, 19, 0, 6.283); g.fill();
-          g.shadowBlur = 0; g.fillStyle = done ? 'rgba(255,255,255,.4)' : '#8a1050';
-          g.font = 'bold 22px "M PLUS 1p", sans-serif'; g.fillText(n + 1, 0, 2);
-          g.restore();
-        });
-        g.restore();
-        drawHeroine(t, W/2, 154, 52);
-      } else {
-        drawHeroine(t, W/2, 156, 104, S.gain > 0 && t - S.gainT < 900 ? 'happy' : 'dance');
-      }
+      drawATHud(t);
+      if(S.navi && S.mode === 'spin'){ drawHeroine(t, W/2, 154, 52); }
+      else { drawHeroine(t, W/2, 156, 104, S.gain > 0 && t - S.gainT < 900 ? 'happy' : 'dance'); }
       drawGisi(t);
+      drawATGain(t);
+    }
+    // ボーナス中の残り枚数：左上の見やすいパネル＋太い進捗バー
+    function drawATHud(t){
+      const at = S.at, left = Math.max(0, at.goal - at.paid), last = left <= 30;
+      g.save(); g.textBaseline = 'middle';
+      // パネル
+      g.fillStyle = 'rgba(10,0,30,.78)'; rrPath(g, 6, 22, 124, 36, 9); g.fill();
+      g.lineWidth = 1.6; g.strokeStyle = last ? `hsl(${(t/3)%360},100%,65%)` : '#F2C14E'; g.stroke();
+      g.textAlign = 'left'; g.fillStyle = '#ffd1ea'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif';
+      g.fillText(last ? 'ラストスパート！' : '残り', 13, 32);
+      g.fillStyle = 'rgba(255,255,255,.6)'; g.font = '7.5px "M PLUS 1p", sans-serif'; g.fillText(`目標 ${at.goal}枚`, 13, 48);
+      // 大きな数字（金色のグラデーション）
+      const pulse = last ? 1 + .06*Math.sin(t/120) : 1;
+      g.translate(112, 41); g.scale(pulse, pulse);
+      const gr = g.createLinearGradient(0, -12, 0, 12); gr.addColorStop(0, '#FFFBE6'); gr.addColorStop(.5, '#FFD23A'); gr.addColorStop(1, '#E08A00');
+      g.textAlign = 'right'; g.font = '26px DotGothic16, monospace';
+      g.lineWidth = 4; g.strokeStyle = '#2a0018'; g.strokeText(left, 0, 1);
+      g.shadowColor = last ? '#FF4F8B' : '#FFB000'; g.shadowBlur = 10; g.fillStyle = gr; g.fillText(left, 0, 1);
+      g.shadowBlur = 0; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText('枚', 3, 5);
+      g.restore();
+      // 進捗バー（下端）
+      const rate = Math.min(1, at.paid / at.goal), bw = W - 12;
+      g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 6, H - 11, bw, 7, 3.5); g.fill();
+      const pg = g.createLinearGradient(6, 0, 6 + bw, 0); pg.addColorStop(0, '#FF4F8B'); pg.addColorStop(.5, '#FFD23A'); pg.addColorStop(1, '#5DFF8A');
+      g.fillStyle = pg; g.shadowColor = '#FFD23A'; g.shadowBlur = 6; rrPath(g, 6, H - 11, Math.max(7, bw*rate), 7, 3.5); g.fill();
+      g.restore();
+    }
+    function drawATGain(t){
       const ge = t - S.gainT;
       if(ge < 1200 && S.gain > 0){
         g.save(); g.globalAlpha = 1 - ge/1200; g.textAlign = 'center';
@@ -1755,7 +2040,9 @@
       S.viewers += (hype ? .6 : .02) * (Math.random() - .3);
 
       if(S.mode === 'atEnd'){
-        drawRoom(t); drawFloor(); drawHeroine(t, W/2, 156, 110, 'happy'); drawMic(); drawGisi(t);
+        if(S.endInfo && S.endInfo.type === 'S7'){ drawUniverse(t); S.gain = 1; S.gainT = t; drawMachida(t); S.gain = 0; }   // 777ボーナスの終了画面
+        else { drawRoom(t); drawFloor(); drawHeroine(t, W/2, 156, 110, 'happy'); drawMic(); }
+        drawGisi(t);
         g.fillStyle = 'rgba(40,0,40,.45)'; g.fillRect(0,0,W,H);
         drawText('EVENT CLEAR', 50, 24, '#fff3b0');
         g.save(); g.textAlign = 'center'; g.font = 'bold 14px "M PLUS 1p", sans-serif'; g.fillStyle = '#fff';
@@ -1773,6 +2060,7 @@
         if(Math.random() < .3) hearts(1, true);
         drawUI(t); return;
       }
+      if(S.bt && !S.at){ drawBattle(t); drawUI(t, true); return; }   // バトル中はコメント欄を出さない
       if(S.tenpai){ drawTenpai(t); drawUI(t); if(S.cut) drawCutin(t); return; }
       // 大当たり確定（図柄告知中）は専用ステージに固定
       if(S.aim){ drawConfirmStage(t); drawUI(t); drawAimBanner(t); if(S.staff) drawStaffBadge(t); if(S.cut) drawCutin(t); return; }
@@ -1858,6 +2146,17 @@
       setLucky(on){ S.lucky = on; },
       setPlayers(n){ S.players = n; },
       broadcast(text){ S.bq.push(text); comment(text, ['📣', 'お知らせ']); },
+      battleStart(b){ S.bt = {...b, hp:b.hp.slice()}; S.bhpView = [100,100]; S.bAct = {type:'intro', t0:performance.now()}; S.bT = performance.now();
+        comment(`${BATTLES[b.type].name}が始まった！`, pick(VIEWERS)); },
+      battleRestore(b){ S.bt = {...b, hp:b.hp.slice()}; S.bhpView = b.hp.slice(); S.bAct = null; },
+      battleAct(type, dmg, snap){ if(!S.bt) return; S.bAct = {type, dmg, snap, t0:performance.now()}; S.bt.game = state.battle ? state.battle.game : S.bt.game; },
+      battleFinal(){ if(!S.bt) return; S.bt.game = 5; S.bAct = {type:'final', t0:performance.now()}; comment('最終決戦！', pick(VIEWERS)); },
+      battleClash(){ if(S.bt) S.bAct = {type:'clash', t0:performance.now()}; },
+      battleResult(win, comeback){ if(!S.bt) return; S.bAct = {type:'result', win, comeback, t0:performance.now()};
+        if(win){ S.bt.hp = [S.bt.hp[0], 0]; S.bt.alive = 0; comment(comeback ? '逆転きたあああ！' : '勝ったー！', pick(VIEWERS)); hearts(16, true); }
+        else { S.bt.hp = [0, S.bt.hp[1]]; comment(pick(['どんまい','おしい…','次は勝てる！']), pick(VIEWERS)); }
+        setTimeout(() => { if(S.bAct && S.bAct.type === 'result') S.bt = null; }, win ? (comeback ? 2600 : 1800) : 2600); },
+      battleEnd(){ S.bt = null; S.bAct = null; },
       setStaff(on){ S.staff = on; if(on) comment('店員さん来た！', pick(VIEWERS)); },
       setCZ(cz){ S.cz = cz ? {...cz} : null; },
       changeStage(n){ S.stg = n; S.stageT = performance.now(); S.np = null; comment('STAGE CHANGE!', pick(VIEWERS)); },
@@ -2020,10 +2319,11 @@
     function start(k, cb){
       if(active){ cb && cb(); return; }
       key = k; onEnd = cb; dpr = Math.min(2, window.devicePixelRatio || 1);
-      dur = reduceMotion ? 1500 : 2800;
+      dur = reduceMotion ? 1500 : (k === 'S7' ? 3800 : 2800);
+      conf = []; bursts = 0;
       stars = Array.from({length:40}, () => ({x:Math.random(), y:Math.random(), s:1 + Math.random()*2.5, ph:Math.random()*6}));
       active = true; t0 = performance.now(); cv.hidden = false;
-      sfx.kakutei();
+      if(k === 'S7') sfx.kyuin777(); else sfx.kakutei();
       requestAnimationFrame(loop);
     }
     function finish(){ if(!active) return; active = false; cv.hidden = true; const f = onEnd; onEnd = null; f && f(); }
@@ -2031,11 +2331,90 @@
       try { if(step(t)) requestAnimationFrame(loop); else finish(); }
       catch(err){ console.error(err); finish(); }
     }
+    // ---- 777確定の全画面：イラストを全面に、クラッカーと光のエフェクト ----
+    let conf = [], bursts = 0;
+    function cracker(w, h, u, fromLeft){
+      const x = fromLeft ? 0 : w, y = h, base = fromLeft ? -Math.PI/3 : -Math.PI*2/3;
+      for(let i=0;i<80;i++){
+        const a = base + (Math.random()-.5)*.7, sp = u*(.022 + Math.random()*.03);
+        conf.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:Math.random()*6, vr:(Math.random()-.5)*.4,
+          s:u*(.012 + Math.random()*.012), c:['#FF4F8B','#FFE14D','#4FF3FF','#9B5CFF','#5DFF8A','#fff','#FF9A2E'][i % 7], ribbon: i % 6 === 0, life:1});
+      }
+      sfx.cracker();
+    }
+    function step777(t, e, w, h, u){
+      const D = dur;
+      const fadeOut = e > D - 350 ? Math.max(0, (D - e)/350) : 1;
+      c.globalAlpha = fadeOut;
+      // 背景：イラストを画面いっぱいに（最初は大きく、すっと引く）
+      const z = 1 + .18*Math.max(0, 1 - easeOut(Math.min(1, e/900))) + .015*Math.sin(e/700);
+      const sc = Math.max(w / K777.naturalWidth, h / K777.naturalHeight) * z;
+      const iw = K777.naturalWidth*sc, ih = K777.naturalHeight*sc;
+      c.drawImage(K777, (w - iw)/2 + Math.sin(e/900)*u*.01, (h - ih)/2, iw, ih);
+      // 光：上から差すスポットライトが左右に振れる（加算合成）
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for(let i=0;i<6;i++){
+        const x = w*(i + .5)/6, a = Math.sin(e/600 + i*1.3)*.5;
+        c.save(); c.translate(x, -h*.05); c.rotate(a);
+        const lg = c.createLinearGradient(0, 0, 0, h*1.1);
+        lg.addColorStop(0, `hsla(${(i*60 + e/8) % 360},100%,75%,.45)`); lg.addColorStop(1, 'hsla(0,0%,100%,0)');
+        c.fillStyle = lg; c.beginPath(); c.moveTo(-u*.02, 0); c.lineTo(u*.02, 0); c.lineTo(u*.16, h*1.1); c.lineTo(-u*.16, h*1.1); c.fill();
+        c.restore();
+      }
+      // きらめき（レンズフレア風）
+      for(let i=0;i<18;i++){
+        const ph = (e/500 + i*.37) % 1, x = ((i*0.618) % 1)*w, y = ((i*0.381 + .1) % .8)*h, r = u*.03*Math.sin(ph*Math.PI);
+        c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath();
+        c.moveTo(x, y - r*2); c.quadraticCurveTo(x, y, x + r*2, y); c.quadraticCurveTo(x, y, x, y + r*2); c.quadraticCurveTo(x, y, x - r*2, y); c.quadraticCurveTo(x, y, x, y - r*2); c.fill();
+      }
+      c.restore();
+      // ストロボ
+      if(e > 200 && (e % 520) < 60){ c.fillStyle = 'rgba(255,255,255,.22)'; c.fillRect(0,0,w,h); }
+      // クラッカー：左右の下から3回
+      const plan = [300, 1200, 2200];
+      while(bursts < plan.length && e >= plan[bursts]){ cracker(w, h, u, true); cracker(w, h, u, false); bursts++; }
+      conf = conf.filter(p => p.life > 0 && p.y < h + 40);
+      for(const p of conf){
+        p.vy += u*.0006; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= .004;
+        c.save(); c.translate(p.x, p.y); c.rotate(p.r); c.fillStyle = p.c;
+        if(p.ribbon){ c.strokeStyle = p.c; c.lineWidth = p.s*.35; c.beginPath(); c.moveTo(-p.s*1.5, 0); c.bezierCurveTo(-p.s*.5, -p.s, p.s*.5, p.s, p.s*1.5, 0); c.stroke(); }
+        else c.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
+        c.restore();
+      }
+      // 文字：下部に「大当たり確定!!」と「777を狙え！！」
+      const te = e - 500;
+      if(te > 0){
+        const band = c.createLinearGradient(0, h*.74, 0, h); band.addColorStop(0, 'rgba(20,0,40,0)'); band.addColorStop(.4, 'rgba(20,0,40,.6)'); band.addColorStop(1, 'rgba(20,0,40,.8)');
+        c.fillStyle = band; c.fillRect(0, h*.74, w, h*.26);
+        const p = Math.min(1, te/240), scl = p < 1 ? 2.2 - 1.2*easeOut(p) : 1 + .035*Math.sin(te/80);
+        let fs = Math.min(w*.13, 80); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const tw = c.measureText('大当たり確定!!').width; if(tw > w*.94) fs *= w*.94/tw;
+        c.save(); c.translate(w/2, h*.84); c.scale(scl, scl); c.rotate(-.03);
+        c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
+        const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
+        for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
+        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('大当たり確定!!', 0, 0);
+        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('大当たり確定!!', 0, 0);
+        c.fillStyle = gr; c.shadowColor = '#fff'; c.shadowBlur = 20; c.fillText('大当たり確定!!', 0, 0);
+        c.restore();
+        if(te > 450){
+          const afs = Math.min(w*.075, 40);
+          c.save(); c.globalAlpha *= Math.min(1, (te - 450)/200); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+          c.font = `900 ${afs}px "M PLUS 1p", sans-serif`; c.lineWidth = afs*.28; c.strokeStyle = '#2a0010'; c.strokeText('777を狙え！！', w/2, h*.93);
+          c.fillStyle = Math.floor(e/250) % 2 ? '#FFE14D' : '#fff'; c.fillText('777を狙え！！', w/2, h*.93); c.restore();
+        }
+      }
+      // 最初の白フラッシュ
+      if(e < 220){ c.globalAlpha = 1 - e/220; c.fillStyle = '#fff'; c.fillRect(0,0,w,h); }
+      c.globalAlpha = 1;
+      return e < D;
+    }
     function step(t){
       const r = cv.getBoundingClientRect(), w = r.width || innerWidth, h = r.height || innerHeight, u = Math.min(w, h);
       if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
       const e = t - t0;
       c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+      if(key === 'S7' && K777.complete && K777.naturalWidth) return step777(t, e, w, h, u);
       const fadeIn = Math.min(1, e/150), fadeOut = e > dur - 300 ? Math.max(0, (dur - e)/300) : 1;
       c.globalAlpha = fadeIn * fadeOut;
       // 夜空から、金と赤の光へ変わる背景
@@ -2133,21 +2512,33 @@
       const fadeOut = e > dur - 350 ? Math.max(0, (dur - e)/350) : 1;
       c.globalAlpha = fadeOut;
       // 背景：金と虹の光
-      const bg = c.createRadialGradient(w/2, h*.5, 0, w/2, h*.5, Math.max(w,h)*.8);
-      bg.addColorStop(0, '#FFF6C8'); bg.addColorStop(.3, '#FFB43A'); bg.addColorStop(.65, '#E0185A'); bg.addColorStop(1, '#3A0A5A');
-      c.fillStyle = bg; c.fillRect(0,0,w,h);
+      const univ = info.type === 'S7' && UNIV_BG.complete && UNIV_BG.naturalWidth;
+      if(univ){
+        // 777ボーナス：Machida Universe の会場（画面を覆うように拡大）
+        const sc = Math.max(w / UNIV_BG.naturalWidth, h / UNIV_BG.naturalHeight) * (1.05 + e/40000);
+        const iw = UNIV_BG.naturalWidth*sc, ih = UNIV_BG.naturalHeight*sc;
+        c.drawImage(UNIV_BG, (w - iw)/2, (h - ih)/2, iw, ih);
+        c.fillStyle = 'rgba(20,0,60,.25)'; c.fillRect(0,0,w,h);
+      } else {
+        const bg = c.createRadialGradient(w/2, h*.5, 0, w/2, h*.5, Math.max(w,h)*.8);
+        bg.addColorStop(0, '#FFF6C8'); bg.addColorStop(.3, '#FFB43A'); bg.addColorStop(.65, '#E0185A'); bg.addColorStop(1, '#3A0A5A');
+        c.fillStyle = bg; c.fillRect(0,0,w,h);
+      }
       c.save(); c.translate(w/2, h*.5); c.rotate(e/1800);
       for(let i=0;i<24;i++){ c.rotate(Math.PI/12); c.fillStyle = `hsla(${(i*30 + e/6) % 360},100%,70%,.22)`;
         c.beginPath(); c.moveTo(0,0); c.lineTo(Math.max(w,h), -u*.09); c.lineTo(Math.max(w,h), u*.09); c.fill(); }
       c.restore();
       // ボーナスキャラが下から飛び出す
       const ce = Math.max(0, e - 700*k);
-      if(ce > 0 && HEROINE.complete && HEROINE.naturalWidth){
-        const p = Math.min(1, ce/550), ih = u*.62*(.4 + .6*easeBack(p)), iw = ih * HEROINE.naturalWidth / HEROINE.naturalHeight;
+      const S7 = info.type === 'S7' && MACHIDA.complete && MACHIDA.naturalWidth;
+      if(ce > 0 && (S7 || (HEROINE.complete && HEROINE.naturalWidth))){
+        const p = Math.min(1, ce/550), ih = u*.62*(.4 + .6*easeBack(p));
         const y = h*.62 + (1 - easeOut(p))*h*.5 - Math.abs(Math.sin(ce/220))*u*.015;
         c.save(); c.translate(w/2, y); c.rotate(Math.sin(ce/400)*.04);
-        c.shadowColor = 'rgba(255,240,200,.95)'; c.shadowBlur = 40;
-        c.drawImage(HEROINE, -iw/2, -ih/2, iw, ih); c.restore();
+        c.shadowColor = S7 ? 'rgba(255,150,40,.95)' : 'rgba(255,240,200,.95)'; c.shadowBlur = 40;
+        if(S7){ const cell = MACHIDA.naturalWidth / 5; c.drawImage(MACHIDA, 2*cell, 2*cell, cell, cell, -ih*.55, -ih*.55, ih*1.1, ih*1.1); }   // 炎をまとって飛び込むポーズ
+        else { const iw = ih * HEROINE.naturalWidth / HEROINE.naturalHeight; c.drawImage(HEROINE, -iw/2, -ih/2, iw, ih); }
+        c.restore();
       }
       // 紙吹雪
       if(e > 600*k) for(const p of conf){ p.y += p.v*.016; p.r += p.vr;
@@ -2175,11 +2566,11 @@
           c.lineWidth = sfs*.25; c.strokeStyle = '#3a0030'; c.strokeText('イベント配信スタート！', w/2, h*.27);
           c.fillStyle = '#fff'; c.fillText('イベント配信スタート！', w/2, h*.27);
           // 目標枚数のバッジ
-          const bw = Math.min(w*.7, 360), bh = sfs*1.7, by = h*.88;
+          const bw = Math.min(w*.88, 400), bh = sfs*1.7, by = h*.88;
           c.fillStyle = info.type === 'S7' ? '#D8192F' : '#161616'; c.strokeStyle = '#F2C14E'; c.lineWidth = 4;
           c.beginPath(); c.roundRect ? c.roundRect(w/2 - bw/2, by - bh/2, bw, bh, bh/2) : c.rect(w/2 - bw/2, by - bh/2, bw, bh); c.fill(); c.stroke();
           c.fillStyle = '#FFF3B0'; c.font = `900 ${sfs*.95}px "M PLUS 1p", sans-serif`;
-          c.fillText(`${info.type === 'S7' ? '7' : 'BAR'} AT ／ ${info.goal}枚まで`, w/2, by + 1);
+          c.fillText(`${info.type === 'S7' ? '777 BONUS' : 'BAR AT'} ／ ${info.goal}枚まで`, w/2, by + 1);
           c.restore();
         }
       }
@@ -2340,6 +2731,9 @@
     $('dScn').textContent = state.scene ? SCENES[state.scene] : '-';
     $('dExp').textContent = state.scene ? (EXPECT[state.scene]*100).toFixed(1) + '%' : '-';
     $('dGeki').textContent = `期待度 ${(GEKI_EXPECT*100).toFixed(1)}%`;
+    { const be = battleExpect();
+      $('dBattle').textContent = `${state.battle ? `${BATTLES[state.battle.type].name} R${state.battle.game}（${state.battle.win ? '勝ち' : '負け'}）` : 'なし'}／期待度 全体${(be.all*100).toFixed(0)}%　`
+        + Object.keys(BATTLES).map(k => `${BATTLES[k].name}${(be[k]*100).toFixed(0)}%`).join('・'); }
     $('dCut').textContent = ['green','red','rainbow'].map(c => `${{green:'緑',red:'赤',rainbow:'虹'}[c]} ${(expectOf(f => cutRow(f)[c] || 0)*100).toFixed(0)}%`).join(' / ');
     $('dGisi').textContent = `今回 ${state.gisi ? state.gisi + '段' : 'なし'}（③以上の期待度 ${(expectOf(f => gisiRow(f).slice(3).reduce((a,b)=>a+b,0))*100).toFixed(0)}%）`;
     $('setting').disabled = busy;
@@ -2395,9 +2789,79 @@
     if(i !== undefined) stopReel(i);
   }
 
+  // ================================================================
+  // バトルリーチ（5ゲーム連続演出）
+  //   ・7・BAR当選（重複含む）の40%でバトルに発展。当たりは5G目まで「保留」して、勝てば大当たり
+  //   ・小役やハズレでも低確率で始まる（負けバトル）。途中で7・BARを引けば逆転勝利に変わる
+  //   ・バトルは4種類。種類によって期待度が違う（S6ライバー全員を倒せ ＞ イベント出場 ＞ ラップ ＞ 通常）
+  // ================================================================
+  const BATTLES = {
+    gun:   {name:'通常バトル',          foe:'夜の帝王・黒服', winW:25, loseW:50},
+    rap:   {name:'ラップバトル',        foe:'MCギフト',      winW:30, loseW:30},
+    event: {name:'イベント出場',        foe:'ライバル配信者', winW:25, loseW:15},
+    s6:    {name:'S6ライバー全員を倒せ', foe:'S6ライバー',    winW:20, loseW:5}
+  };
+  const BATTLE_RATE = {BIG:.40, CHEM:.08, WML:.04, BEL:.04, CHE:.02, GRP:.004, RPL:.003, other:.002};
+  const battleRate = f => isBig(f) ? BATTLE_RATE.BIG : (BATTLE_RATE[f] ?? BATTLE_RATE.other);
+  function pickWeighted(obj, key){ const ks = Object.keys(obj); let r = Math.random()*ks.reduce((a,k)=>a+obj[k][key],0);
+    for(const k of ks){ if(r < obj[k][key]) return k; r -= obj[k][key]; } return ks[0]; }
+  function newBattle(win, comeback, type){
+    const t = type || pickWeighted(BATTLES, win ? 'winW' : 'loseW');
+    // 1〜4G目の攻防（勝つバトルほどコウジ優勢の展開が多い）
+    const turns = Array.from({length:4}, () => Math.random() < (win && !comeback ? .65 : .38) ? 'hero' : 'enemy');
+    return {type:t, win, comeback: !!comeback, game:1, turns, hp:[100,100], rank:5, alive:6, big:null};
+  }
+  // バトルの種類ごとの7・BAR期待度（デバッグ表示用）
+  function battleExpect(){
+    let win = 0, lose = 0;
+    effDist().forEach(([k,p]) => { const r = battleRate(k); if(isBig(k)) win += p*r; else lose += p*r; });
+    const sw = Object.values(BATTLES).reduce((a,e)=>a+e.winW,0), sl = Object.values(BATTLES).reduce((a,e)=>a+e.loseW,0);
+    const out = {}; for(const [k,e] of Object.entries(BATTLES)){ const w = win*e.winW/sw, l = lose*e.loseW/sl; out[k] = w/(w+l); }
+    out.all = win/(win+lose); return out;
+  }
+  // 1ゲーム分の展開
+  function battleTurn(i){
+    const b = state.battle; if(!b) return;
+    const who = b.turns[i] || 'hero';
+    let dmg = 14 + Math.floor(Math.random()*11);
+    if(b.type === 'event') b.rank = who === 'hero' ? Math.max(2, b.rank - 1) : Math.min(5, b.rank + 1);   // 優勝は最終ゲームで決まる
+    else if(b.type === 's6'){ if(who === 'hero'){ dmg = Math.random() < .4 ? 2 : 1; b.alive = Math.max(1, b.alive - dmg); } }
+    else { const target = who === 'hero' ? 1 : 0; b.hp[target] = Math.max(18, b.hp[target] - dmg); }   // 決着は5G目なので途中では倒れない
+    screen.battleAct(who, dmg, {hp:b.hp.slice(), rank:b.rank, alive:b.alive});
+    sfx.battleHit(who);
+  }
+  const BATTLE_MSG = {
+    gun:   ['夜の帝王・黒服を撃破！', '黒服にやられてしまった…'],
+    rap:   ['ラップバトル勝利！', 'MCギフトに言い負かされた…'],
+    event: ['イベント優勝！！', '惜しくも2位…優勝ならず'],
+    s6:    ['S6ライバー全員撃破！', 'S6ライバーに囲まれてしまった…']
+  };
+  // 5G目の結果
+  function battleResult(){
+    const b = state.battle; state.battle = null;
+    state.battlePending = true;   // 決着の演出中は次のゲームを始めない
+    if(b.win){
+      screen.battleResult(true, b.comeback);
+      (b.comeback ? sfx.battleComeback : sfx.battleWin)();
+      setMsg(b.comeback ? `逆転!! ${BATTLE_MSG[b.type][0]}` : BATTLE_MSG[b.type][0]);
+      net.send('btwin', BATTLES[b.type].name);
+      if(b.comeback) net.send('premier', '逆転勝利');
+      setTimeout(() => { state.carry = b.big || 'S7'; state.battlePending = false; pekaOn('バトル勝利'); save(); updateUI(); }, b.comeback ? 2600 : 1800);
+    } else {
+      screen.battleResult(false); sfx.battleLose();
+      setMsg(BATTLE_MSG[b.type][1]);
+      setTimeout(() => { state.battlePending = false; if(!state.battle) screen.battleEnd(); }, 2600);
+    }
+  }
+
+
+
   function pull(){
     if(!state.ready) return;
     if(state.phase === 'spinning'){ stopNext(); return; }
+    if(state.battlePending) return;   // バトルの決着演出中
+    // スキップ予約が残っていたら、次のゲームを始めずにスキップする
+    if(state.skipQueued && state.at){ skipAT(); return; }
     audio.init();
     if(audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume();
     finishCount(); hideBigWin();
@@ -2431,9 +2895,36 @@
       const on = dbg.dup ? dbg.dup === 'on' : Math.random() < DUP[state.flag];
       if(on){ const st = SETTINGS[state.setting]; state.dupBig = Math.random() < st.S7/(st.S7 + st.BAR) ? 'S7' : 'BAR'; }
     }
-    const hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
+    let hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
+    // ---------- バトルリーチ ----------
+    state.battleGame = false;
+    if(!state.at && !state.cz && !state.peka && !state.carry){
+      if(!state.battle){
+        const forced = dbg.battle;
+        if(forced || Math.random() < battleRate(hot)){
+          const win = forced ? forced !== 'lose' : isBig(hot);
+          state.battle = newBattle(win, forced === 'comeback', dbg.enemy);   // dbg.enemy＝バトルの種類
+          if(win) state.battle.big = isBig(hot) ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR');
+          screen.battleStart(state.battle); sfx.battleStart();
+          setTimeout(() => { if(state.battle && state.battle.game === 1) battleTurn(0); }, 1900);
+        }
+      } else if(state.battle.game < 5){
+        battleTurn(state.battle.game - 1);
+      } else { screen.battleFinal(); sfx.battleFinal(); }
+      if(state.battle){
+        state.battleGame = true;
+        // バトル中に引いた7・BARは揃えずに保留し、5G目に勝利として発表（途中で引けば逆転）
+        if(BIG.includes(state.flag) || state.dupBig){
+          if(!state.battle.win){ state.battle.win = true; state.battle.comeback = true; }
+          state.battle.big = state.battle.big || state.dupBig || state.flag;
+          if(BIG.includes(state.flag)) state.flag = null;
+          state.dupBig = null;
+        }
+        hot = null;   // バトル中はほかの予告を出さない
+      }
+    }
     // 通常ステージのステージチェンジ（アツいほど起きやすく、7・BAR当選時はステージ3に行きやすい）
-    if(!state.at && !state.cz && !state.peka){
+    if(!state.at && !state.cz && !state.peka && !state.battleGame){
       state.stageCount = (state.stageCount || 0) + 1;
       if(!state.stageLimit) state.stageLimit = 30 + Math.floor(Math.random()*21);   // 30〜50Gのどこかで強制移行
       const rate = dbg.stage ? 1 : isBig(hot) ? .12 : ['WML','BEL','CHEM'].includes(hot) ? .06 : .03;
@@ -2458,14 +2949,14 @@
       if(state.navi) setTimeout(sfx.navi, 150);
     } else {
       // --- 液晶演出の抽選（ランプ点灯中は通常演出）---
-      state.scene = dbg.scene || (state.peka ? 'walk' : pickScene(hot));
+      state.scene = state.battleGame ? 'walk' : dbg.scene || (state.peka ? 'walk' : pickScene(hot));
       screen.start(state.scene);
     }
     // --- 激アツ演出の抽選（通常時のみ）---
-    state.geki = !state.at && !state.peka && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
+    state.geki = !state.at && !state.peka && !state.battleGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
     // --- カットイン・擬似連の抽選（通常時のみ）---
-    state.cutin = state.at ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
-    state.gisi = state.at || state.peka ? 0 : (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
+    state.cutin = state.at || state.battleGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
+    state.gisi = state.at || state.peka || state.battleGame ? 0 : (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
     state.gisiDone = 0;
     if(state.gisi === 5) state.geki = false; // ⑤で全画面の激アツが出るので第2停止の激アツは出さない
     // カットインがあるときは、見終わってから擬似連を始める
@@ -2478,7 +2969,7 @@
 
     // --- ランプ（先ペカ／後ペカ）の抽選 ---
     state.postPeka = false;
-    if(isBig(hot) && !state.peka && !state.at){
+    if(isBig(hot) && !state.peka && !state.at && !state.battleGame){
       const pre = dbg.peka ? dbg.peka === 'pre' : Math.random() < PRE_PEKA;
       if(pre){ state.aimGame = true; setTimeout(() => pekaOn('先ペカ'), 120); }
       else state.postPeka = true;
@@ -2491,7 +2982,9 @@
     applyReelSpeed();
     state.startTs = state.lastTs = performance.now();
     setMsg(state.at ? ''
-      : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : state.cz ? `チャンスステージ 残り${state.cz.left}G` : 'STOPで止めよう');
+      : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！`
+      : state.battleGame ? (state.battle.game >= 5 ? '最終決戦！ 3つ目のSTOPで決着' : `バトル中 ROUND ${state.battle.game}/5`)
+      : state.cz ? `チャンスステージ 残り${state.cz.left}G` : 'STOPで止めよう');
     if(!wasReplay) sfx.coin();
     sfx.lever();
     save(); updateUI();
@@ -2534,6 +3027,8 @@
     if(pressed === 2 && state.geki){ state.geki = false; if(!state.peka) geki.start(); }
     // 3つ目のSTOPを押した瞬間に後ペカ
     const last = reels.every(x => x.stopping || !x.spinning);
+    // バトル最終ゲーム：第3停止で激突
+    if(last && state.battleGame && state.battle && state.battle.game >= 5){ screen.battleClash(); sfx.battleClash(); }
     // 第3停止：カットイン
     if(last && state.postPeka){ state.postPeka = false; pekaOn('後ペカ'); }
     updateUI();
@@ -2566,7 +3061,7 @@
       r.p = mod(r.p - move, N);
       if(i === 0 && Math.floor(r.p) !== r.lastTick){ r.lastTick = Math.floor(r.p); sfx.tick(); }
       if(r.stopping && r.remain <= 1e-9){
-        r.p = r.stopPos; r.spinning = false; sfx.stop(i); if(!state.at) checkTenpai();
+        r.p = r.stopPos; r.spinning = false; sfx.stop(i); if(!state.at && !state.battleGame) checkTenpai();
       } else anySpinning = true;
       render(r);
     });
@@ -2582,8 +3077,15 @@
     const flag = state.ctrlFlag;   // 制御上の役（押し順ぶどうは正解ならGRP、不正解ならnull）
     const hit = wins.some(w => w.key === flag);
 
-    if(!state.at) state.carry = (CARRY_OVER.includes(flag) && !hit) ? flag : null;
+    // 持ち越し：7・BARのゲームだけで更新する（小役のゲームで持ち越しが消えてしまう不具合の対策）
+    if(!state.at && CARRY_OVER.includes(flag)) state.carry = hit ? null : flag;
     const dupHit = !state.at && !!state.dupBig;
+    // バトルを1ゲーム進める（5G目なら決着）
+    const wasBattle = state.battleGame;
+    if(wasBattle && state.battle){
+      if(state.battle.game >= 5){ state.battlePending = true; setTimeout(battleResult, 500); }
+      else state.battle.game++;
+    }
     if(dupHit) state.carry = state.dupBig;   // 重複当選：次ゲームで7・BARを狙う
     const navi = state.navi; state.navi = null;
 
@@ -2635,7 +3137,7 @@
       else { setMsg(`${SYM[wins[0].key].name}　${total}枚`); sfx.smallWin(); }
       if(total > 0) startCount(total, false);
       if(state.at.paid >= state.at.goal){ endAT(); state.skipQueued = false; $('skipBtn').classList.remove('queued'); $('skipBtn').textContent = 'SKIP ▶▶'; }
-      else if(state.skipQueued) setTimeout(skipAT, 500);
+
     } else {
       screen.resolve({flag, hit, big: dupHit || BIG.includes(flag), bigKey: dupHit ? state.dupBig : (BIG.includes(flag) ? flag : null)});
       if(wasTenpai){ sfx.tenpaiFail(); }
@@ -2663,7 +3165,7 @@
       if(state.czGame && state.cz){
         if(BIG.includes(flag) || dupHit) endCZ(true);       // 7・BAR当選でチャンスステージ終了（ボーナスへ）
         else czStep();
-      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && CZIN[flag]){
+      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && !wasBattle && !state.battle && CZIN[flag]){
         // 小役で7・BARの抽選に外れたとき、チャンスステージへの移行を抽選
         if(debugSettings().czIn === 'on' || Math.random() < CZIN[flag]) setTimeout(enterCZ, 700);
       }
@@ -2671,6 +3173,9 @@
     if(bigHit && state.cz) endCZ(true);
     state.dupBig = null;
     save(); updateUI();
+    // スキップ予約があれば、このゲームが止まった直後にその場で実行（以前は0.5秒後だったため、
+    // その間に次のゲームが始まると予約が流れてしまうことがあった）
+    if(state.skipQueued && state.at) skipAT();
     // メダルが尽きたら、払い出しのカウントが終わったころにチャージの案内
     setTimeout(() => { if(needCharge() && !countTimer) showCharge(true); }, 1500);
   }
@@ -2794,6 +3299,7 @@
     k1000:   (n)    => `🪙 ${n}さんのメダルが1000枚を突破！`,
     premier: (n, d) => `🌈 ${n}さんがプレミア演出${d ? `「${d}」` : ''}を引いた！`,
     czin:    (n)    => `✨ ${n}さんがチャンスステージに突入！`,
+    btwin:   (n, d) => `⚔ ${n}さんが${d || 'バトル'}で勝利！`,
     czcont:  (n, d) => `🔥 ${n}さんのチャンスステージが継続！${d ? `（${d}セット目）` : ''}`,
     czend:   (n, d) => `🌙 ${n}さんのチャンスステージが終了…${d ? `（${d}G）` : ''}`
   };
@@ -2876,7 +3382,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610030401';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031228';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -2954,7 +3460,7 @@
   bgmBtn.addEventListener('click', () => { audio.init(); state.bgm = !state.bgm; store.set('slot.bgm', state.bgm); syncBgmBtn(); });
   syncBgmBtn();
   setInterval(() => {
-    const normal = state.sound && state.bgm && audio.ctx && !state.at && !state.tenpai && !geki.active
+    const normal = state.sound && state.bgm && audio.ctx && !state.at && !state.battle && !state.tenpai && !geki.active
       && $('bigwin').hidden && !['big','atEnd'].includes(screen.mode);
     if(normal) bgm.start(); else bgm.stop();
     // ボーナスゲーム中（突入演出のあと、AT画面になってから終了まで）は専用BGM
@@ -2998,7 +3504,10 @@
     if($('debug').hidden) return {};
     const f = $('fFlag').value, s = $('fScene').value, p = $('fPeka').value, a = $('fAim').value, k = $('fGeki').value;
     const cu = $('fCut').value, gs = $('fGisi').value, du = $('fDup').value, cz = $('fCz').value;
+    const bt = $('fBattle').value, en = $('fEnemy').value;
     return {
+      battle: bt === 'auto' ? null : bt,
+      enemy: en === 'auto' ? null : en,
       dup: du === 'auto' ? null : du,
       czIn: cz === 'on' ? 'on' : null,
       czCont: cz === 'auto' ? null : cz,
@@ -3065,6 +3574,7 @@
     finishCount(); hideBigWin();
     if(state.at){ state.at = null; screen.setAT(null); $('topper').classList.remove('party'); }
     if(state.cz){ state.cz = null; screen.setCZ(null); }
+    if(state.battle){ state.battle = null; screen.battleEnd(); }
     state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
     Object.assign(state, {credits:100, games:0, coinIn:0, coinOut:0, carry:null, payout:0, replay:false, flag:null, scene:null, postPeka:false, pekaType:'-'});
     reels.forEach(r => r.slide = null);
@@ -3094,6 +3604,7 @@
   if(state.peka){ state.pekaType = '持ち越し'; setPeka(true); if(state.carry) screen.setAim(state.carry); }
   if(state.cz && !state.at){ state.cz = {left:state.cz.left, played:state.cz.played || 0, set:state.cz.set || 1, cont:state.cz.cont ?? null}; screen.setCZ(state.cz); }
   screen.setStage(state.stage);
+  if(state.battle && !state.at) screen.battleRestore(state.battle);
   if(state.at){ screen.setAT(state.at); screen.startAT(null); screen.resultAT(0); $('topper').classList.add('party'); }
   syncSound(); screen.run(); measure(); updateMap();
   if(document.fonts) document.fonts.ready.then(measure);
