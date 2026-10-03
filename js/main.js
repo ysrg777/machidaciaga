@@ -301,9 +301,9 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031242', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031242', 'aiBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031242', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031250', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031250', 'aiBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031250', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -783,45 +783,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031242';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031250';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031242';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031250';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031242';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031250';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031242';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031250';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031242';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031250';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031242';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031250';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031242';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031250';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031242';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031250';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031242';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031250';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031242';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031250';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031242';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031250';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031242';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031250';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031242';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031250';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2321,7 +2321,7 @@
 
   // ================================================================
   // 8-5. 大当たり確定の突入演出（全画面）：おじいちゃん背景に切り替わる前に入る
-  //      虹の流れ星が横切る → おじいちゃんが飛び込む → 「大当たり確定!!」
+  //      虹の流れ星が横切る → おじいちゃんが飛び込む → 「ボーナス！ボーナス！」
   // ================================================================
   const kakutei = (() => {
     const cv = $('kakutei'), c = cv.getContext('2d');
@@ -2393,21 +2393,21 @@
         else c.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
         c.restore();
       }
-      // 文字：下部に「大当たり確定!!」と「777を狙え！！」
+      // 文字：下部に「ボーナス！ボーナス！」と「777を狙え！！」
       const te = e - 500;
       if(te > 0){
         const band = c.createLinearGradient(0, h*.74, 0, h); band.addColorStop(0, 'rgba(20,0,40,0)'); band.addColorStop(.4, 'rgba(20,0,40,.6)'); band.addColorStop(1, 'rgba(20,0,40,.8)');
         c.fillStyle = band; c.fillRect(0, h*.74, w, h*.26);
         const p = Math.min(1, te/240), scl = p < 1 ? 2.2 - 1.2*easeOut(p) : 1 + .035*Math.sin(te/80);
         let fs = Math.min(w*.13, 80); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const tw = c.measureText('大当たり確定!!').width; if(tw > w*.94) fs *= w*.94/tw;
+        const tw = c.measureText('ボーナス！ボーナス！').width; if(tw > w*.94) fs *= w*.94/tw;
         c.save(); c.translate(w/2, h*.84); c.scale(scl, scl); c.rotate(-.03);
         c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
         const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
         for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
-        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('大当たり確定!!', 0, 0);
-        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('大当たり確定!!', 0, 0);
-        c.fillStyle = gr; c.shadowColor = '#fff'; c.shadowBlur = 20; c.fillText('大当たり確定!!', 0, 0);
+        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('ボーナス！ボーナス！', 0, 0);
+        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('ボーナス！ボーナス！', 0, 0);
+        c.fillStyle = gr; c.shadowColor = '#fff'; c.shadowBlur = 20; c.fillText('ボーナス！ボーナス！', 0, 0);
         c.restore();
         if(te > 450){
           const afs = Math.min(w*.075, 40);
@@ -2457,19 +2457,19 @@
         c.shadowColor = 'rgba(255,240,180,.95)'; c.shadowBlur = 36;
         c.drawImage(OJII, -iw/2, -ih/2, iw, ih); c.restore();
       }
-      // 「大当たり確定!!」
+      // 「ボーナス！ボーナス！」
       const te = e - 800;
       if(te > 0){
         const p = Math.min(1, te/240), sc = p < 1 ? 2.4 - 1.4*easeOut(p) : 1 + .035*Math.sin(te/80);
         let fs = Math.min(w*.14, 84); c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
-        const tw = c.measureText('大当たり確定!!').width; if(tw > w*.94) fs *= w*.94/tw;
+        const tw = c.measureText('ボーナス！ボーナス！').width; if(tw > w*.94) fs *= w*.94/tw;
         c.save(); c.translate(w/2, h*.16); c.scale(sc, sc); c.rotate(-.04);
         c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.font = `900 ${fs}px "M PLUS 1p", sans-serif`;
         const gr = c.createLinearGradient(-w*.4, 0, w*.4, 0), o = (e/4) % 360;
         for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*60) % 360},100%,62%)`);
-        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('大当たり確定!!', 0, 0);
-        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('大当たり確定!!', 0, 0);
-        c.fillStyle = gr; c.fillText('大当たり確定!!', 0, 0);
+        c.lineWidth = fs*.22; c.strokeStyle = '#2a0010'; c.strokeText('ボーナス！ボーナス！', 0, 0);
+        c.lineWidth = fs*.08; c.strokeStyle = '#fff'; c.strokeText('ボーナス！ボーナス！', 0, 0);
+        c.fillStyle = gr; c.fillText('ボーナス！ボーナス！', 0, 0);
         c.restore();
         // 狙う図柄
         const ae = te - 400;
@@ -2681,7 +2681,7 @@
     state.pekaType = type;
     setPeka(true); sfx.gako(); screen.react();
     const key = state.dupBig || (BIG.includes(state.flag) ? state.flag : state.carry) || 'S7';
-    setMsg('大当たり確定!!');
+    setMsg('ボーナス！ボーナス！');
     // 回転中（先ペカ）は、演出が終わるまでSTOPを受け付けない
     if(state.phase === 'spinning') state.lockUntil = Math.max(state.lockUntil || 0, performance.now() + 60000);
     updateUI();
@@ -3405,7 +3405,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031242';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031250';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
