@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031440', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031440', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610031440', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610031440', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610031440', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610031440', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031440', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031958', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031958', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610031958', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610031958', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610031958', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610031958', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031958', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -521,6 +521,8 @@
     },
     freezeRumble(){ audio.tone(55,0,3,{type:'sawtooth',vol:.12,to:40}); audio.noise(0,3,.1,200); },
     freezeHit(){ audio.tone(3136,0,.6,{type:'sine',vol:.14}); audio.tone(4186,.05,.5,{type:'sine',vol:.1}); audio.noise(0,.2,.4,6000,'highpass'); },
+    srStart(){ [392,523,659,784].forEach((f,k)=>audio.tone(f,k*.07,.25,{type:'square',vol:.08})); audio.noise(0,.3,.25,2000); },
+    srReveal(){ audio.noise(0,.2,.4,3000,'highpass'); [659,880,1175,1568].forEach((f,k)=>audio.tone(f,.05 + k*.07,.22,{type:'triangle',vol:.1})); },
     staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
@@ -638,6 +640,7 @@
     carry: saved ? saved.carry : null,
     cz: saved ? saved.cz || null : null, czGame: false,
     battle: saved && saved.battle && saved.battle.type ? saved.battle : null, battleGame: false,
+    sr: null, srBattle: saved ? saved.srBattle || null : null, srGame: false, srPending: false,
     stage: saved ? saved.stage || 1 : 1, dupBig: null,
     stageCount: saved ? saved.stageCount || 0 : 0, stageLimit: saved ? saved.stageLimit || 0 : 0,
     at: saved ? saved.at || null : null, navi: null, ctrlFlag: null,
@@ -654,7 +657,7 @@
   };
   applySetting(state.setting); calcExpect();
   const save = () => store.set('slot4.state', {credits:state.credits, games:state.games,
-    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, battle:state.battle, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
+    coinIn:state.coinIn, coinOut:state.coinOut, carry:state.carry, at:state.at, cz:state.cz, battle:state.battle, sr:state.sr, srBattle:state.srBattle, stage:state.stage, stageCount:state.stageCount, stageLimit:state.stageLimit});
 
   const reels = STRIPS.map((strip, i) => {
     const el = stripEls[i];
@@ -844,45 +847,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031440';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031958';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031440';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031958';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031440';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031958';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031440';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031958';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031440';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031958';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031440';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031958';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031440';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031958';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031440';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031958';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031440';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031958';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031440';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031958';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031440';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031958';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031440';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031958';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031440';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031958';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -900,7 +903,8 @@
       cz:null, czT:-1e9, czEndT:-1e9, pose:0, poseT:0,
       stg:1, stageT:-1e9, np:null, npCat:'', npT:0, pfx:[], kiaiT:-1e9,
       czAori:'weak', czAoriT:-1e9, czAoriSeed:0, czResT:-1e9, czResOk:false, lucky:false, players:null, bq:[], bcur:null, bT:0,
-      bt:null, bAct:null, bhpView:[100,100], pv:null, pvT:0, rv:null, rvT:-1e9, pvRevealed:false};
+      bt:null, bAct:null, bhpView:[100,100], pv:null, pvT:0, rv:null, rvT:-1e9, pvRevealed:false,
+      sr:null, srT:0, srRes:null, srResT:0, pickT:0};
 
     function resize(){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1972,6 +1976,155 @@
       g.restore();
     }
 
+    // ================================================================
+    // 特殊リーチの画面
+    // ================================================================
+    function speech(text, x, y, maxW, align = 'left', col = '#2a0018'){
+      g.save(); g.font = 'bold 9.5px "M PLUS 1p", sans-serif';
+      const lines = []; let line = '';
+      for(const ch of text){ if(g.measureText(line + ch).width > maxW){ lines.push(line); line = ch; } else line += ch; }
+      lines.push(line);
+      const w = Math.max(...lines.map(l => g.measureText(l).width)) + 14, h = lines.length*12 + 8;
+      const bx = align === 'left' ? x : x - w;
+      g.fillStyle = 'rgba(255,255,255,.96)'; rrPath(g, bx, y, w, h, 7); g.fill();
+      g.strokeStyle = '#FF4F8B'; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = col; g.textBaseline = 'middle'; g.textAlign = 'left';
+      lines.forEach((l, i) => g.fillText(l, bx + 7, y + 10 + i*12));
+      g.restore();
+    }
+    function srHeader(name, t){
+      g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, W/2 - 90, 22, 180, 15, 7); g.fill();
+      g.fillStyle = `hsl(${(t/6)%360},90%,70%)`; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(name, W/2, 29.5); g.restore();
+    }
+    function drawSR(t){
+      const sr = S.sr, e = t - S.srT, game = sr.game, R = S.srRes;
+      const re = R ? t - S.srResT : -1;
+      // 背景
+      const bgc = {icon:['#ffb3d9','#ff6fb0'], audition:['#3a2a6a','#120a2a'], carriage:['#1a2a6a','#060a24'], family:['#ffd9a0','#f08a4a'], house:['#9fd8ff','#4a9a5a'], hashiguchi:['#2a2a3a','#0a0a14']}[sr.type];
+      const bg = g.createLinearGradient(0,0,0,H); bg.addColorStop(0, bgc[0]); bg.addColorStop(1, bgc[1]); g.fillStyle = bg; g.fillRect(0,0,W,H);
+      if(sr.type !== 'audition' && sr.type !== 'hashiguchi' && sr.type !== 'carriage') for(let k=0;k<8;k++) sparkle((k*47 + t/30) % W, 30 + (k*23) % 100, 2 + k%2, '#fff');
+      srHeader(SR_TYPES[sr.type].name, t);
+      const big = txt => { const p = 1 + .05*Math.sin(t/90); g.save(); g.translate(W/2, 64); g.scale(p, p); g.translate(-W/2, -64); bText(txt, 64, 18, '#FFE14D'); g.restore(); };
+
+      if(sr.type === 'icon'){
+        const pk = sr.d.picked, xs = [70, 160, 250];
+        xs.forEach((x, i) => {
+          const sel = pk === i, k = sel && S.pickT ? Math.min(1, (t - S.pickT)/300) : 0;
+          if(pk >= 0 && !sel){ g.globalAlpha = .35; }
+          const r = 30 + k*10, cy = 96 - k*6;
+          g.save(); g.beginPath(); g.arc(x, cy, r, 0, 6.283); g.fillStyle = '#fff'; g.fill(); g.clip();
+          const fraud = sel && sr.success && t - S.pickT > 650;
+          if(fraud){ g.translate((Math.random()-.5)*3, 0); drawFoe(1, 'pinch', x, cy + r + 6, r*2.4); }   // 正体（焦った顔）
+          else drawLiver(sr.d.icons[i], false, x, cy + r + 4, r*2.3);
+          g.restore();
+          g.strokeStyle = sel ? '#FFE14D' : '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(x, cy, r, 0, 6.283); g.stroke();
+          g.globalAlpha = 1;
+          if(pk < 0){ sparkle(x + 24, 70, 4, '#fff'); g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.fillStyle = '#a0005a'; g.fillText('盛れてる♡', x, 136); }
+        });
+        if(pk < 0) bText('タップして選んで！', 148, 11, '#fff', '#a0005a');
+        else if(t - S.pickT > 650) bText(sr.success ? 'アイコン詐欺発覚!!' : '本物でした…かわいい', 148, sr.success ? 15 : 12, sr.success ? '#FFE14D' : '#fff', sr.success ? '#a00000' : '#a0005a');
+      }
+
+      if(sr.type === 'audition'){
+        drawHeroSprite(1, 56, 158, 78);
+        if(game === 1){
+          const msg = `えー、本日の日跨ぎスタメンを発表します。1番${sr.d.names[0]}、2番${sr.d.names[1]}、3番${sr.d.names[2]}！いけるか？！`;
+          speech(msg.slice(0, Math.floor(e/45)), 92, 42, 190);
+        } else {
+          for(let i=0;i<3;i++){
+            const y = 44 + i*34, shown = i < game - 1 || (i === game - 1);
+            g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 104, y, 74, 26, 6); g.fill();
+            g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+            g.fillText(`${i + 1}番`, 110, y + 8); g.fillStyle = '#fff'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.fillText(sr.d.names[i].slice(0, 7), 110, y + 19); g.restore();
+            const rep = sr.d.replies[i];
+            if(rep && (i < game - 2 || (i === game - 2 && e > 900))){
+              const ok = rep === 'はい！いけます！';
+              g.save(); g.fillStyle = ok ? '#5DFF8A' : '#9aa0b0'; rrPath(g, 184, y + 2, 128, 22, 11); g.fill();
+              g.fillStyle = ok ? '#0a3a1a' : '#2a2a3a'; g.font = 'bold 9.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+              g.fillText(rep, 248, y + 13); g.restore();
+            } else if(i === game - 2){ g.save(); g.fillStyle = '#fff'; g.font = 'bold 10px sans-serif'; g.fillText('…'.repeat(1 + Math.floor(e/250) % 3), 196, y + 15); g.restore(); }
+          }
+        }
+      }
+
+      if(sr.type === 'carriage'){
+        g.fillStyle = '#FFF3B0'; g.beginPath(); g.arc(270, 40, 14, 0, 6.283); g.fill();
+        for(let k=0;k<20;k++){ g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect((k*53) % W, 30 + (k*29) % 60, 1.5, 1.5); }
+        g.fillStyle = '#0a1a3a'; g.fillRect(0, 136, W, 24);
+        const cx = -60 + Math.min(1, e/2600)*(W + 120);
+        drawCarriage(cx, 136);
+        const ok = sr.d.at === game, jumpT = 1300;
+        let kx = cx - 70 + Math.min(1, e/jumpT)*30, ky = 158, pose = 14;
+        if(e > jumpT){ const jk = Math.min(1, (e - jumpT)/400);
+          if(ok){ kx = cx - 40 + jk*30; ky = 158 - Math.sin(jk*Math.PI)*40 - jk*12; pose = 2; if(jk >= 1){ kx = cx; ky = 128; } }
+          else { kx = cx - 50; ky = 158 - Math.sin(Math.min(1, jk*1.4)*Math.PI)*30; pose = 10; } }
+        if(!(ok && e > jumpT + 400)) drawHeroSprite(pose, kx, ky, 60);
+        if(e > jumpT + 500) bText(ok ? '乗り込み成功!!' : `乗り遅れた…${sr.len - game > 0 && !ok ? `（あと${sr.len - game}回）` : ''}`, 64, ok ? 18 : 13, ok ? '#FFE14D' : '#cfd8ff');
+        g.save(); g.fillStyle = 'rgba(0,0,0,.5)'; rrPath(g, 8, 40, 66, 14, 7); g.fill(); g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle'; g.fillText(`チャンス ${game}/5`, 14, 47); g.restore();
+      }
+
+      if(sr.type === 'family'){
+        const target = sr.d.counts[game - 1], prev = game > 1 ? sr.d.counts[game - 2] : 0;
+        const n = Math.min(target, prev + Math.floor(Math.max(0, e - 300)/180));
+        drawHeroSprite(game === 3 && e > 2200 && n < 20 ? 4 : 9, 52, 158, 74);
+        const AV = ['🐰','🐻','🐱','🐶','🐼','🦊','🐹','🐧','🐨','🐸','🐯','🐮','🐷','🐵','🐥','🦁','🐰','🐻','🐱','🐶'];
+        for(let i=0;i<20;i++){ const x = 116 + (i % 5)*38, y = 50 + Math.floor(i/5)*24;
+          g.save(); g.globalAlpha = i < n ? 1 : .2; g.font = '16px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(i < n ? AV[i] : '・', x, y); g.restore(); }
+        g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, 8, 40, 84, 16, 8); g.fill(); g.fillStyle = n >= 20 ? '#FFE14D' : '#fff'; g.font = 'bold 9.5px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle';
+        g.fillText(`ファミリー ${n}/20`, 15, 48); g.restore();
+        if(game === 3 && e > 2200){ if(n >= 20) bText('ファミリー集結!!', 146, 16, '#FFE14D', '#7a2a00'); else speech(sr.d.line, 84, 120, 150); }
+      }
+
+      if(sr.type === 'house'){
+        // 家
+        const hx = 220, hy = 140;
+        g.fillStyle = '#fff6e0'; g.fillRect(hx - 50, hy - 52, 100, 52);
+        g.fillStyle = '#c0392b'; g.beginPath(); g.moveTo(hx - 60, hy - 50); g.lineTo(hx, hy - 90); g.lineTo(hx + 60, hy - 50); g.fill();
+        g.fillStyle = '#7a4a2a'; g.fillRect(hx - 10, hy - 30, 20, 30); g.fillStyle = '#9fd8ff'; g.fillRect(hx - 40, hy - 40, 20, 16); g.fillRect(hx + 20, hy - 40, 20, 16);
+        g.fillStyle = '#3a7a3a'; g.fillRect(0, hy, W, H - hy);
+        drawHeroSprite(game === 3 && e > 1800 ? (sr.success ? 2 : 10) : 1, 60, 158, 74);
+        g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, 172, 42, 96, 16, 8); g.fill(); g.fillStyle = '#FFE14D'; g.font = 'bold 9.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(sr.d.price, 220, 50); g.restore();
+        if(game === 1) speech('コウジ、家を買います！', 92, 60, 120);
+        if(game === 2){ bText('住宅ローン審査中' + '・'.repeat(1 + Math.floor(e/300) % 3), 72, 13, '#fff', '#1a3a6a'); }
+        if(game === 3 && e > 1200){
+          const k = Math.min(1, (e - 1200)/250), ok = sr.success;
+          g.save(); g.translate(220, 98); g.rotate(-.2); g.scale(2 - k, 2 - k); g.globalAlpha = k;
+          g.strokeStyle = ok ? '#e0102a' : '#3a3a8a'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 26, 0, 6.283); g.stroke();
+          g.fillStyle = g.strokeStyle; g.font = '900 18px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ok ? '承認' : '否決', 0, 1); g.restore();
+          if(e > 1800) bText(ok ? '購入決定!!' : '家は買えませんでした…', 64, ok ? 18 : 12, ok ? '#FFE14D' : '#fff', '#1a3a6a');
+        }
+      }
+
+      if(sr.type === 'hashiguchi'){
+        g.fillStyle = '#4a3a2a'; g.fillRect(200, 52, 70, 98);   // ドア
+        const open = Math.min(1, Math.max(0, (e - 600)/500));
+        g.fillStyle = '#fff6d0'; g.fillRect(200, 52, 70*open, 98);
+        drawHeroSprite(9, 64, 158, 74);
+        // 何人目か
+        g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, 8, 40, 64, 14, 7); g.fill(); g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle'; g.fillText(`${game}人目`, 14, 47); g.restore();
+        if(e < 1900) bText('ドアの向こうに誰か…', 64, 12, '#fff', '#000');
+        if(e > 1200 && e < 1900){ g.save(); g.font = '60px sans-serif'; g.textAlign = 'center'; g.filter = 'brightness(0)'; g.fillText('🧑', 235, 125); g.restore(); }
+        if(e >= 1900){
+          const hashi = sr.success && game === 3;   // 橋口（女性）は3人目にだけ現れる
+          g.save(); g.font = '60px sans-serif'; g.textAlign = 'center'; g.fillText(hashi ? '👩' : '🤢', 235, 125); g.restore();
+          g.save(); g.fillStyle = hashi ? '#FFE14D' : '#7a8a3a'; rrPath(g, 205, 132, 60, 14, 7); g.fill(); g.fillStyle = '#000'; g.font = 'bold 8.5px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText(hashi ? '橋口' : 'ゲボリスナー', 235, 139); g.restore();
+          if(hashi){ bText('なんだ橋口か', 64, 18, '#fff', '#000'); }
+          else { bText('ゲボリスナー登場！', 64, 14, '#c8ff6a', '#2a3a00'); if(e > 2600) speech('帰れ', 96, 82, 60); }
+        }
+      }
+
+      // 結果の見出し
+      if(R){
+        const k = Math.min(1, re/200);
+        const label = R.outcome === 'big' ? 'ボーナス！ボーナス！' : R.outcome === 'battle' ? 'バトル発展!!' : R.outcome === 'cz' ? 'チャンスステージへ!!' : null;
+        if(label){ g.save(); g.fillStyle = `rgba(0,0,0,${.45*k})`; g.fillRect(0,0,W,H); g.restore();
+          g.save(); g.translate(W/2, 86); g.scale(.6 + .4*easeBack(k), .6 + .4*easeBack(k)); g.translate(-W/2, -86);
+          bText(label, 86, 22, R.outcome === 'big' ? `hsl(${(t/3)%360},100%,62%)` : '#FFE14D', '#2a0018'); g.restore(); }
+      }
+    }
+
     // ほかのプレイヤーのお知らせ：液晶上部を右から左へ流れる帯
     function drawBroadcast(t){
       if(!S.bcur && S.bq.length){ S.bcur = S.bq.shift(); S.bT = t; }
@@ -2259,6 +2412,7 @@
         drawUI(t); return;
       }
       if(S.pv){ drawPreview(t); if(S.pv) return; }                          // 次回予告
+      if(S.sr && !S.at){ drawSR(t); drawUI(t, S.sr.type !== 'hashiguchi'); return; }   // 特殊リーチ
       if(S.bt && !S.at){ drawBattle(t); drawUI(t, true); return; }   // バトル中はコメント欄を出さない
       if(S.tenpai){ drawTenpai(t); drawUI(t); if(S.cut) drawCutin(t); return; }
       // 大当たり確定（図柄告知中）は専用ステージに固定
@@ -2345,6 +2499,19 @@
       setLucky(on){ S.lucky = on; },
       setPlayers(n){ S.players = n; },
       broadcast(text){ S.bq.push(text); comment(text, ['📣', 'お知らせ']); },
+      srStart(sr){ S.sr = JSON.parse(JSON.stringify(sr)); S.srT = performance.now(); S.srRes = null; S.pickT = 0;
+        comment(pick(['なにか始まった！', 'え、なになに？', 'これはアツい？']), pick(VIEWERS));
+        this.srComments(sr); },
+      srStep(sr){ if(!S.sr) return this.srStart(sr); S.sr = JSON.parse(JSON.stringify(sr)); S.srT = performance.now(); this.srComments(sr); },
+      srComments(sr){
+        if(sr.type !== 'hashiguchi') return;
+        if(sr.success && sr.game === 3) for(let k=0;k<8;k++) setTimeout(() => comment('なんだ橋口か', pick(VIEWERS)), 1900 + k*160);   // 全員「なんだ橋口か」
+        else setTimeout(() => comment(pick(['帰れｗ', 'また来たｗ', 'ゲボやん']), pick(VIEWERS)), 2700);
+      },
+      srPick(i){ if(S.sr){ S.sr.d.picked = i; S.pickT = performance.now(); } },
+      srResult(sr){ if(!S.sr) S.sr = JSON.parse(JSON.stringify(sr)); S.srRes = sr; S.srResT = performance.now();
+        if(sr.type === 'family' && !sr.success) comment('こわっ', pick(VIEWERS)); },
+      srEnd(){ S.sr = null; S.srRes = null; },
       preview(pv){ S.pv = pv; S.pvT = performance.now(); S.pvRevealed = false; },
       reveal(pv){ S.rv = pv; S.rvT = performance.now(); S.pvRevealed = true; sfx.reveal(); },
       gisiFail(){ S.gfT = performance.now(); sfx.battleLose(); },
@@ -3021,6 +3188,94 @@
   }
 
   // ================================================================
+  // 特殊リーチ（6種類）：ゲームをまたいで進むリーチ。結果は開始時に決まっている
+  //   成功したときの行き先：大当たり／バトル発展／チャンスステージ
+  //   7・BAR当選のゲームで始まった場合、当たりは結果発表まで保留する（バトルと同じ）
+  // ================================================================
+  const SR_TYPES = {
+    icon:       {name:'アイコン詐欺を見破れ！',     w:18},
+    audition:   {name:'リスナーオーディション中',   w:16},
+    carriage:   {name:'かぼちゃの馬車に乗り込め！', w:16},
+    family:     {name:'ファミリーよ！集結しろ！',   w:16},
+    house:      {name:'コウジ、家を買う。',         w:16},
+    hashiguchi: {name:'誰かが配信に遊びに来た！',   w:18}
+  };
+  const SR_RATE = {BIG:.30, CHEM:.08, WML:.04, BEL:.04, CHE:.015, other:.003};
+  const srRate = f => isBig(f) ? SR_RATE.BIG : (SR_RATE[f] ?? SR_RATE.other);
+  // ハズレ・小役で始まったときに成功する確率（7・BARのときは必ず成功）
+  const SR_GASA_WIN = {icon:.25, audition:0, carriage:0, family:.25, house:.15, hashiguchi:.20};
+  const AUDITION_NG = ['・・・', 'コインがありません！', '来月頑張らせてください！', 'なうならいけます！'];
+  const FAMILY_LINES = ['なにがファミリーだよ💢', 'いいんだね？💢', '今日来ないやつはファミリーじゃない', '既読スルーは許さんぞ💢',
+                        '推しは推せるときに推せって言ったよね？', '寝たやつ全員覚えとくからな', '枠閉じるぞ💢', 'ファミリー解散です'];
+  const shuffle = a => { const b = a.slice(); for(let i=b.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  // オーディションの名前：いまプレイ中の人を優先し、足りなければリスナーから
+  function pickNames(n){
+    const online = shuffle(net.players().filter(x => x && x !== state.name));
+    const rest = shuffle(LISTENERS.map(l => l.name).filter(x => !online.includes(x)));
+    return online.concat(rest).slice(0, n);
+  }
+  function newSR(bigKey, type, force){
+    const t = type || pickWeighted(SR_TYPES, 'w');
+    const success = force ? force === 'win' : (!!bigKey || Math.random() < SR_GASA_WIN[t]);
+    const sr = {type:t, big:bigKey || null, game:1, len:1, success, outcome:'none', d:{}};
+    if(t === 'icon'){
+      sr.d.icons = shuffle([0,1,2,3,4,5]).slice(0,3); sr.d.picked = -1;
+      sr.outcome = success ? (bigKey || Math.random() < .5 ? 'battle' : 'cz') : 'none';
+    }
+    if(t === 'audition'){
+      sr.d.names = pickNames(3);
+      const failAt = success ? -1 : pickIdx([.3,.35,.35]);
+      sr.d.replies = [0,1,2].map(i => failAt === -1 || i < failAt ? 'はい！いけます！' : i === failAt ? pick(AUDITION_NG) : null);
+      sr.len = failAt === -1 ? 4 : failAt + 2;
+      sr.outcome = success ? 'big' : 'none';
+    }
+    if(t === 'carriage'){
+      sr.d.at = success ? 1 + pickIdx([.1,.15,.2,.25,.3]) : 0;   // 何ゲーム目で乗り込めるか（後ろほど多い）
+      sr.len = sr.d.at || 5;
+      sr.outcome = success ? 'big' : (Math.random() < .3 ? 'cz' : 'none');
+    }
+    if(t === 'family'){
+      const r = (a, b) => a + Math.floor(Math.random()*(b - a + 1));
+      sr.d.counts = success ? [r(5,8), r(11,15), 20] : [r(3,7), r(8,12), r(12,19)];
+      sr.d.line = pick(FAMILY_LINES); sr.len = 3;
+      sr.outcome = success ? 'battle' : 'none';
+    }
+    if(t === 'house'){
+      sr.d.price = pick(['3,980万円', '5,800万円', '1億2,000万円']); sr.len = 3;
+      sr.outcome = success ? (bigKey ? 'big' : 'cz') : 'none';
+    }
+    if(t === 'hashiguchi'){ sr.len = 3; sr.outcome = success ? 'battle' : 'none'; }
+    if(sr.outcome === 'big' && !sr.big) sr.big = Math.random() < 1/3 ? 'S7' : 'BAR';   // デバッグで成功させたとき用
+    return sr;
+  }
+  // アイコン詐欺：タップしたアイコンの正体を明かす
+  function srIconPick(i){
+    const sr = state.sr; if(!sr || sr.type !== 'icon' || sr.d.picked >= 0) return;
+    sr.d.picked = i; screen.srPick(i, sr.success);
+    (sr.success ? sfx.srReveal : sfx.battleLose)();
+    state.lockUntil = performance.now() + 1600;
+    setTimeout(updateUI, 1650);
+  }
+  // 結果の反映（最後のゲームが止まったあと）
+  function srEnd(){
+    const sr = state.sr; state.sr = null;
+    screen.srResult(sr);
+    const wait = 2200;
+    setTimeout(() => {
+      state.srPending = false; screen.srEnd();
+      if(sr.outcome === 'big' || ((sr.outcome === 'none' || sr.outcome === 'cz') && sr.big)){
+        state.carry = sr.big; pekaOn('リーチ成功');
+      } else if(sr.outcome === 'battle'){
+        state.srBattle = {type:null, win: !!sr.big, big: sr.big};
+        setMsg('バトル発展!! SPINでバトル開始');
+      } else if(sr.outcome === 'cz'){
+        enterCZ();
+      }
+      save(); updateUI();
+    }, wait);
+  }
+
+  // ================================================================
   // 次回予告（前兆）：ゲームの終わりに「次回配信のお知らせ」を出し、次のゲームの当たりを予告する
   //   ・予告を出すときは、次のゲームの抽選を先に済ませておき、その結果に合わせて中身を選ぶ
   //     （抽選の確率そのものは変わらないので、出玉率には影響しない）
@@ -3059,7 +3314,7 @@
   }
   // ゲーム終了時に、次回予告を出すかどうか（出す場合は次のゲームの抽選をここで済ませる）
   function maybePreview(){
-    if(state.at || state.cz || state.peka || state.carry || state.battle || state.battlePending || state.nextDraw || state.czPending) return;
+    if(state.at || state.cz || state.peka || state.carry || state.battle || state.battlePending || state.nextDraw || state.czPending || state.sr || state.srPending || state.srBattle) return;
     const dbg = debugSettings();
     let f = dbg.flag !== undefined ? dbg.flag : lottery(TABLE);
     if(dbg.preview === 'accident' && !BIG.includes(f)) f = 'S7';   // デバッグ：放送事故は確定なので7にする
@@ -3206,6 +3461,7 @@
     if(state.phase === 'spinning'){ stopNext(); return; }
     if(state.battlePending) return;   // バトルの決着演出中
     if(performance.now() < (state.previewUntil || 0)) return;   // 次回予告の表示中
+    if(state.srPending) return;                                  // 特殊リーチの結果発表中
     // スキップ予約が残っていたら、次のゲームを始めずにスキップする
     if(state.skipQueued && state.at){ skipAT(); return; }
     audio.init();
@@ -3252,6 +3508,28 @@
     state.freezeUntil = 0;
     let hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
     state.gisiSolo = null; state.preGisi = 0; state.introDelay = 0;
+    // ---------- 特殊リーチ ----------
+    state.srGame = false;
+    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame){
+      if(!state.sr){
+        const fsr = dbg.sr;
+        if(dbg.freeze !== 'on' && !state.pvAccident && (fsr || Math.random() < srRate(hot))){
+          const bigKey = isBig(hot) ? (state.dupBig || state.flag) : null;
+          state.sr = newSR(bigKey, fsr && fsr !== 'on' ? fsr : null, dbg.srWin);
+          screen.srStart(state.sr); sfx.srStart();
+        }
+      } else screen.srStep(state.sr);
+      if(state.sr){
+        state.srGame = true;
+        // 特殊リーチ中に引いた7・BARは保留して、結果発表のあとに必ずペカらせる
+        if(BIG.includes(state.flag) || state.dupBig){
+          state.sr.big = state.sr.big || state.dupBig || state.flag;
+          if(BIG.includes(state.flag)) state.flag = null;
+          state.dupBig = null;
+        }
+        hot = null;
+      }
+    }
     // デバッグ：フリーズ強制のときは7当選にして、バトルにはしない
     if(dbg.freeze === 'on' && !state.at && !state.cz && !state.peka && !state.carry && !state.battle && !isBig(hot)){ state.flag = 'S7'; hot = 'S7'; }
     // ---------- バトルリーチ ----------
@@ -3261,7 +3539,8 @@
         // バトル開始の抽選。擬似連は「そのまま大当たり」にはせず、バトルに発展させる
         //   7・BAR当選：40%でバトル（そのうち65%は擬似連を経由）。バトルにならないときは擬似連も出さない
         //   ハズレ・小役：擬似連が出たら段数に応じて負けバトルに発展。発展しなければ「発展ならず」
-        const fb = state.forceBattle;   // 次回予告の「バトル予告」
+        const fb = state.forceBattle || state.srBattle;   // 次回予告の「バトル予告」・特殊リーチからの発展
+        const fromSR = !!state.srBattle; state.srBattle = null;
         if(!state.pvAccident){
         const forced = dbg.battle || (fb ? (fb.win ? 'win' : 'lose') : null), fg = (dbg.gisi !== null && dbg.gisi !== undefined) ? dbg.gisi : null, big = isBig(hot);
         let start = false, win = false, pre = 0;
@@ -3276,9 +3555,9 @@
         if(start){
           state.battle = newBattle(win, forced === 'comeback', dbg.enemy || (fb && fb.type));   // dbg.enemy＝バトルの種類
           if(state.battle.type === 's6' || state.battle.win){ state.battle.win = true;
-            state.battle.big = big ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR'); }
+            state.battle.big = (fb && fb.big) || (big ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR')); }
           state.preGisi = pre;
-          const intro = () => { if(state.battle && state.battle.game === 1){ screen.battleStart(state.battle, pre > 0); sfx.battleStart();
+          const intro = () => { if(state.battle && state.battle.game === 1){ screen.battleStart(state.battle, pre > 0 || fromSR); sfx.battleStart();
             setTimeout(() => { if(state.battle && state.battle.game === 1) battleTurn(0); }, 1900); } };
           if(pre > 0){
             // 擬似連を見せ終わってから「バトル発展!!」
@@ -3304,11 +3583,11 @@
     }
     // ---------- フリーズ（プレミア） ----------
     state.freezeGame = false;
-    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame){
+    if(!state.at && !state.cz && !state.peka && !state.carry && !state.battleGame && !state.srGame){
       if(isBig(hot) && (dbg.freeze === 'on' || Math.random() < FREEZE_RATE)) state.freezeGame = true;
     }
     // 通常ステージのステージチェンジ（アツいほど起きやすく、7・BAR当選時はステージ3に行きやすい）
-    if(!state.at && !state.cz && !state.peka && !state.battleGame && !state.freezeGame){
+    if(!state.at && !state.cz && !state.peka && !state.battleGame && !state.freezeGame && !state.srGame){
       state.stageCount = (state.stageCount || 0) + 1;
       if(!state.stageLimit) state.stageLimit = 30 + Math.floor(Math.random()*21);   // 30〜50Gのどこかで強制移行
       const rate = dbg.stage ? 1 : isBig(hot) ? .12 : ['WML','BEL','CHEM'].includes(hot) ? .06 : .03;
@@ -3333,18 +3612,18 @@
       if(state.navi) setTimeout(sfx.navi, 150);
     } else {
       // --- 液晶演出の抽選（ランプ点灯中は通常演出）---
-      state.scene = state.battleGame || state.freezeGame ? 'walk' : dbg.scene || (state.peka ? 'walk' : pickScene(hot));
+      state.scene = state.battleGame || state.freezeGame || state.srGame ? 'walk' : dbg.scene || (state.peka ? 'walk' : pickScene(hot));
       screen.start(state.scene);
     }
     // --- 激アツ演出の抽選（通常時のみ）---
-    state.geki = !state.at && !state.peka && !state.battleGame && !state.freezeGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
+    state.geki = !state.at && !state.peka && !state.battleGame && !state.freezeGame && !state.srGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
     // --- カットイン・擬似連の抽選（通常時のみ）---
-    state.cutin = state.at || state.battleGame || state.freezeGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
+    state.cutin = state.at || state.battleGame || state.freezeGame || state.srGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
     {
       let gs = 0;
       if(!state.at && !state.peka){
         if(state.battle && state.battle.game === 1 && state.preGisi) gs = state.preGisi;            // バトルに発展する擬似連
-        else if(!state.battleGame && !state.freezeGame && !isBig(hot))                              // 発展しない擬似連（ガセ）
+        else if(!state.battleGame && !state.freezeGame && !state.srGame && !isBig(hot))                              // 発展しない擬似連（ガセ）
           gs = state.gisiSolo ?? (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
       }
       state.gisi = gs;
@@ -3358,6 +3637,10 @@
     // ⑤は液晶で2秒見せたあと全画面の激アツ。終わるまでSTOPを受け付けない
     if(state.gisi === 5) state.lockUntil += GISI5_HOLD;
     if(state.introDelay) state.lockUntil = Math.max(state.lockUntil, performance.now() + state.introDelay + 300);
+    if(state.srGame && state.sr.type === 'icon' && state.sr.d.picked < 0){
+      state.lockUntil = Infinity;
+      setTimeout(() => { if(state.sr && state.sr.type === 'icon' && state.sr.d.picked < 0) srIconPick(Math.floor(Math.random()*3)); }, autoOn ? 2000 : 9000);
+    }
     else if(state.gisi && !state.battle){
       // 発展しなかった擬似連：最後の段のあとに「発展ならず…」
       const endAt = GISI_START + state.gisiDelay + (state.gisi - 1)*GISI_GAP + (state.gisi === 5 ? GISI5_HOLD : 1150);
@@ -3371,7 +3654,7 @@
 
     // --- ランプ（先ペカ／後ペカ）の抽選 ---
     state.postPeka = false;
-    if(isBig(hot) && !state.peka && !state.at && !state.battleGame && !state.freezeGame){
+    if(isBig(hot) && !state.peka && !state.at && !state.battleGame && !state.freezeGame && !state.srGame){
       const pre = state.pvAccident || (dbg.peka ? dbg.peka === 'pre' : Math.random() < PRE_PEKA);
       state.pvAccident = false;
       if(pre){ state.aimGame = true; setTimeout(() => pekaOn('先ペカ'), 120); }
@@ -3387,6 +3670,7 @@
     setMsg(state.at ? ''
       : state.peka ? `${(BIG.includes(state.flag) ? state.flag : state.carry) === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！`
       : state.battleGame ? (state.battle.game >= 5 ? '最終決戦！ 3つ目のSTOPで決着' : `バトル中 ROUND ${state.battle.game}/5`)
+      : state.srGame ? (state.sr.type === 'icon' ? 'アイコンをタップして選んで！' : SR_TYPES[state.sr.type].name)
       : state.cz ? `チャンスステージ 残り${state.cz.left}G` : 'STOPで止めよう');
     if(!wasReplay && !state.freezeGame) sfx.coin();
     if(state.freezeGame){ setMsg('……'); startFreeze(); } else sfx.lever();   // フリーズ中は音が消える
@@ -3473,7 +3757,7 @@
       if(r.stopping && r.remain <= 1e-9){
         r.p = r.stopPos; r.spinning = false; sfx.stop(i);
         sevenStopSound(i);
-        if(!state.at && !state.battleGame) checkTenpai();
+        if(!state.at && !state.battleGame && !state.srGame) checkTenpai();
       } else anySpinning = true;
       render(r);
     });
@@ -3493,7 +3777,11 @@
     if(!state.at && CARRY_OVER.includes(flag)) state.carry = hit ? null : flag;
     const dupHit = !state.at && !!state.dupBig;
     // バトルを1ゲーム進める（5G目なら決着）
-    const wasBattle = state.battleGame;
+    const wasBattle = state.battleGame || state.srGame;
+    if(state.srGame && state.sr){
+      if(state.sr.game >= state.sr.len){ state.srPending = true; setTimeout(srEnd, 500); }
+      else state.sr.game++;
+    }
     if(wasBattle && state.battle){
       if(state.battle.game >= 5){ state.battlePending = true; setTimeout(battleResult, 500); }
       else state.battle.game++;
@@ -3578,7 +3866,7 @@
       if(state.czGame && state.cz){
         if(BIG.includes(flag) || dupHit) endCZ(true);       // 7・BAR当選でチャンスステージ終了（ボーナスへ）
         else czStep();
-      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && !wasBattle && !state.battle && CZIN[flag]){
+      } else if(!state.cz && !state.peka && !BIG.includes(flag) && !dupHit && !wasBattle && !state.battle && !state.sr && !state.srPending && CZIN[flag]){
         // 小役で7・BARの抽選に外れたとき、チャンスステージへの移行を抽選
         if(debugSettings().czIn === 'on' || Math.random() < CZIN[flag]){ state.czPending = true; setTimeout(enterCZ, 700); }
       }
@@ -3719,7 +4007,7 @@
     czend:   (n, d) => `🌙 ${n}さんのチャンスステージが終了…${d ? `（${d}G）` : ''}`
   };
   const net = (() => {
-    let db = null, uid = null, fb = null, joinedAt = Date.now(), lastSend = {};
+    let db = null, uid = null, fb = null, joinedAt = Date.now(), lastSend = {}, players = [];
     async function init(){
       if(!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.databaseURL) return;
       try {
@@ -3735,7 +4023,10 @@
           if(snap.val() !== true) return;
           fb.onDisconnect(me).remove().then(() => fb.set(me, {t: fb.serverTimestamp(), name: state.name || ''}));
         });
-        fb.onValue(fb.ref(db, 'presence'), snap => screen.setPlayers(Math.max(1, snap.size)));
+        fb.onValue(fb.ref(db, 'presence'), snap => {
+          screen.setPlayers(Math.max(1, snap.size));
+          players = []; snap.forEach(c => { const v = c.val(); if(c.key !== uid && v && v.name) players.push(cleanName(v.name)); });
+        });
         // 開いた後に起きた、他の人の出来事だけを受け取る
         const q = fb.query(fb.ref(db, 'events'), fb.orderByChild('t'), fb.startAt(joinedAt - 5000));
         fb.onChildAdded(q, snap => {
@@ -3756,7 +4047,7 @@
       fb.push(fb.ref(db, 'events'), {uid, name: state.name, type, detail: String(detail).slice(0, 30), t: fb.serverTimestamp()}).catch(() => {});
     }
     function rename(){ if(db && uid) fb.update(fb.ref(db, `presence/${uid}`), {name: state.name}).catch(() => {}); }
-    return {init, send, rename, test: (type = 'big') => receive({name:'テスト', type, detail: type === 'big' ? 'S7' : type === 'czcont' ? '2' : type === 'czend' ? '40' : ''})};
+    return {init, send, rename, players: () => players.slice(), test: (type = 'big') => receive({name:'テスト', type, detail: type === 'big' ? 'S7' : type === 'czcont' ? '2' : type === 'czend' ? '40' : ''})};
   })();
   // 名前に使えない文字を取り除いて、長さを制限する
   function cleanName(v){ return String(v || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12) || '名無し'; }
@@ -3797,7 +4088,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031440';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031958';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -3819,6 +4110,13 @@
     });
     $('updateClose').addEventListener('click', () => { dismissed = latest; $('updateBar').hidden = true; });
   })();
+
+  // アイコン詐欺リーチ：液晶のアイコンをタップして選ぶ
+  $('screen').addEventListener('click', e => {
+    const sr = state.sr; if(!sr || sr.type !== 'icon' || sr.d.picked >= 0) return;
+    const r = $('screen').getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 320;
+    srIconPick(x < 115 ? 0 : x < 205 ? 1 : 2);
+  });
 
   // リール速度の切り替え（回転中は次のゲームから反映）
   const applyReelSpeed = () => { SPEED = (REEL_SPEEDS[state.reelSpeed] || REEL_SPEEDS.normal).v; };
@@ -3919,8 +4217,10 @@
     if($('debug').hidden) return {};
     const f = $('fFlag').value, s = $('fScene').value, p = $('fPeka').value, a = $('fAim').value, k = $('fGeki').value;
     const cu = $('fCut').value, gs = $('fGisi').value, du = $('fDup').value, cz = $('fCz').value;
-    const bt = $('fBattle').value, en = $('fEnemy').value, pvw = $('fPreview').value, fz = $('fFreeze').value;
+    const bt = $('fBattle').value, en = $('fEnemy').value, pvw = $('fPreview').value, fz = $('fFreeze').value, srv = $('fSr').value, srw = $('fSrWin').value;
     return {
+      sr: srv === 'auto' ? null : srv,
+      srWin: srw === 'auto' ? null : srw,
       preview: pvw === 'auto' ? null : pvw,
       freeze: fz === 'auto' ? null : fz,
       battle: bt === 'auto' ? null : bt,
@@ -3992,6 +4292,7 @@
     if(state.at){ state.at = null; screen.setAT(null); $('topper').classList.remove('party'); }
     if(state.cz){ state.cz = null; screen.setCZ(null); }
     state.nextDraw = null; state.pvAccident = false; state.previewUntil = 0;
+    state.sr = null; state.srBattle = null; state.srPending = false; screen.srEnd();
     if(state.battle){ state.battle = null; screen.battleEnd(); }
     state.missCount = 0; state.assist = false; showStaff(false); screen.setStaff(false);
     Object.assign(state, {credits:100, games:0, coinIn:0, coinOut:0, carry:null, payout:0, replay:false, flag:null, scene:null, postPeka:false, pekaType:'-'});
@@ -4022,6 +4323,8 @@
   if(state.peka){ state.pekaType = '持ち越し'; setPeka(true); if(state.carry) screen.setAim(state.carry); }
   if(state.cz && !state.at){ state.cz = {left:state.cz.left, played:state.cz.played || 0, set:state.cz.set || 1, cont:state.cz.cont ?? null}; screen.setCZ(state.cz); }
   screen.setStage(state.stage);
+  // 特殊リーチの途中で閉じた場合：保留中の当たりがあれば、そのままペカらせる
+  if(saved && saved.sr && saved.sr.big && !state.at && !state.carry){ state.carry = saved.sr.big; state.pekaType = '持ち越し'; setPeka(true); screen.setAim(state.carry); }
   if(state.battle && !state.at) screen.battleRestore(state.battle);
   if(state.at){ screen.setAT(state.at); screen.startAT(null); screen.resultAT(0); $('topper').classList.add('party'); }
   syncSound(); screen.run(); measure(); updateMap();
