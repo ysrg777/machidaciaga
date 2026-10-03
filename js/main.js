@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610032125', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610032125', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610032125', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610032125', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610032125', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610032125', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610032125', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610032346', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610032346', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610032346', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610032346', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610032346', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610032346', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610032346', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -853,45 +853,53 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610032125';
+  HERO.src = 'assets/img/haishin.webp?ver=202610032346';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610032125';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610032346';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610032125';
+  OJII.src = 'assets/img/ojii.webp?ver=202610032346';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610032125';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610032346';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610032125';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610032346';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610032125';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610032346';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610032125';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610032346';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610032125';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610032346';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610032125';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610032346';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610032125';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610032346';
+  // 777ボーナス中の液晶背景：ループ動画（640×320・無音。曲はボーナスBGMのまま）
+  const ATV = document.createElement('video');
+  ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610032346';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610032346';
+  // H.264（iPhone・Safari・Chrome など）が使えなければ WebM（VP9）を使う
+  ATV.src = ATV.canPlayType('video/mp4; codecs="avc1.4D401E"') ? ATV_MP4 : ATV_WEBM;
+  const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610032125';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610032346';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610032125';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610032346';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610032125';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610032346';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2328,6 +2336,12 @@
       S.mp = p; S.mpCat = cat; S.mpT = t;
     }
     function drawUniverse(t){
+      if(atvReady() && S.at && S.at.type === 'S7'){
+        g.drawImage(ATV, 0, 0, W, H);
+        const vg = g.createLinearGradient(0, 100, 0, H); vg.addColorStop(0, 'rgba(10,0,40,0)'); vg.addColorStop(1, 'rgba(10,0,40,.45)');
+        g.fillStyle = vg; g.fillRect(0, 100, W, H - 100);   // 下端の進捗バーを見やすく
+        return;
+      }
       if(UNIV_BG.complete && UNIV_BG.naturalWidth){
         // ゆっくりズームしながら左右に流す
         const z = 1.08 + .05*Math.sin(t/7000), bw = W*z, bh = H*z;
@@ -2361,7 +2375,7 @@
     }
 
     function drawAT(t){
-      if(S.at.type === 'S7'){ drawUniverse(t); drawATHud(t); if(!S.navi || S.mode !== 'spin') drawMachida(t); drawGisi(t); drawATGain(t); return; }
+      if(S.at.type === 'S7'){ drawUniverse(t); drawATHud(t); if(!atvReady() && (!S.navi || S.mode !== 'spin')) drawMachida(t); drawGisi(t); drawATGain(t); return; }
       const sk = g.createLinearGradient(0,0,0,H);
       sk.addColorStop(0,'#3a0a5a'); sk.addColorStop(1,'#b0145a');
       g.fillStyle = sk; g.fillRect(0,0,W,H);
@@ -4298,7 +4312,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610032125';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610032346';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -4418,6 +4432,9 @@
     // ボーナスゲーム中（突入演出のあと、AT画面になってから終了まで）は専用BGM
     const bonus = state.sound && state.bgm && audio.ctx && state.at && !bonusIn.active && screen.mode !== 'big';
     if(bonus) bonusBgm.start(); else bonusBgm.stop();
+    const wantVideo = state.at && state.at.type === 'S7' && !bonusIn.active && screen.mode !== 'big';
+    if(wantVideo && ATV.paused) ATV.play().catch(() => {});
+    else if(!wantVideo && !ATV.paused) ATV.pause();
     $('skipBtn').hidden = !state.at;
   }, 200);
 
