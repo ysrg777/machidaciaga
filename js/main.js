@@ -270,6 +270,7 @@
 
 
 
+
   const audio = {
     ctx:null, fx:null, droneOsc:null, droneGain:null,
     // テンパイ中にじわじわ上がっていく持続音
@@ -305,13 +306,14 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610040118', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610040118', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610040118', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610040118', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610040118', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610040118', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610040118', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610040141', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610040141', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610040141', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610040141', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610040141', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610040141', 'sevenAlignBuf');
+        load('assets/sound/bonusin_snd.mp3?ver=202610040141', 'bonusinBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610040141', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -546,6 +548,7 @@
       const src = audio.ctx.createBufferSource(), g = audio.ctx.createGain();
       src.buffer = audio.bigwinBuf; g.gain.value = 1.0;
       src.connect(g); g.connect(audio.master); src.start();
+      sfx.stopBuf('bigwin'); (audio.playing ||= {}).bigwin = src;
       state.bigwinSndAt = performance.now();
       return true;
     },
@@ -853,50 +856,50 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610040118';
+  HERO.src = 'assets/img/haishin.webp?ver=202610040141';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610040118';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610040141';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610040118';
+  OJII.src = 'assets/img/ojii.webp?ver=202610040141';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610040118';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610040141';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610040118';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610040141';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610040118';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610040141';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610040118';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610040141';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610040118';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610040141';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610040118';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610040141';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610040118';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610040141';
   // 777ボーナス中の液晶背景：ループ動画（640×320・約40秒・無音。曲はボーナスBGMのまま）
   const ATV = document.createElement('video');
   ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
-  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610040118';
-  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610040118';
-  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610040118';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610040141';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610040141';
+  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610040141';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
   const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
-  // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒・無音）
+  // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒）。音声は別の音源で動画と同時に鳴らす
   const BV = document.createElement('video');
   BV.muted = true; BV.playsInline = true; BV.setAttribute('playsinline', ''); BV.setAttribute('muted', ''); BV.preload = 'auto';
-  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610040118';
-  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610040118';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
-  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610040118';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
+  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610040141';
+  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610040141';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
+  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610040141';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
   // 動画の画質：標準／高画質（設定欄で切り替え）。H.264が使えないブラウザはWebM（標準画質）
   const videoQ = () => { try { return JSON.parse(localStorage.getItem('slot.vq')) || 'sd'; } catch(e){ return 'sd'; } };
   const canMp4 = BV.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '';
@@ -912,12 +915,12 @@
   const bvReady = () => BV.readyState >= 2 && BV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610040118';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610040141';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610040118';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610040141';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610040118';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610040141';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2902,11 +2905,16 @@
       info = opt; onEnd = cb; dpr = Math.min(2, window.devicePixelRatio || 1);
       dur = reduceMotion ? 1800 : 3600;
       useVideo = bvReady() || BV.readyState >= 1;
-      if(useVideo){ try { BV.currentTime = 0; } catch(e){} BV.play().catch(() => { useVideo = false; }); dur = Math.round((BV.duration || 8) * 1000) + 200; }
+      if(useVideo){
+        try { BV.currentTime = 0; } catch(e){}
+        BV.play().catch(() => { useVideo = false; });
+        dur = Math.round((BV.duration || 8) * 1000) + 200;
+        sfx.stopBuf('bigwin'); sfx.playBuf('bonusin', 1);   // 動画の音声
+      }
       conf = Array.from({length:90}, () => ({x:Math.random(), y:-Math.random()*.6, v:.12 + Math.random()*.18, r:Math.random()*6, vr:(Math.random()-.5)*.3,
         c:['#FF4F8B','#FFE14D','#4FF3FF','#9B5CFF','#5DFFB0','#fff'][Math.floor(Math.random()*6)], s:4 + Math.random()*5}));
       active = true; t0 = performance.now(); cv.hidden = false;
-      if(performance.now() - (state.bigwinSndAt || -1e9) > 4800) sfx.bonusIn();
+      if(!useVideo && performance.now() - (state.bigwinSndAt || -1e9) > 4800) sfx.bonusIn();
       requestAnimationFrame(loop);
     }
     function finish(){ if(!active) return; active = false; cv.hidden = true; try { BV.pause(); } catch(e){} const f = onEnd; onEnd = null; f && f(); }
@@ -4306,7 +4314,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610040118';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610040141';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
