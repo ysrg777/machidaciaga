@@ -305,13 +305,13 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610031321', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610031321', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610031321', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610031321', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610031321', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610031321', 'sevenAlignBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031321', 'bonusBuf'), 300);
+        load('assets/sound/ooi.mp3?ver=202610031335', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610031335', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610031335', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610031335', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610031335', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610031335', 'sevenAlignBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610031335', 'bonusBuf'), 300);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -817,45 +817,45 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610031321';
+  HERO.src = 'assets/img/haishin.webp?ver=202610031335';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610031321';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610031335';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610031321';
+  OJII.src = 'assets/img/ojii.webp?ver=202610031335';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031321';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610031335';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031321';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610031335';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031321';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610031335';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031321';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610031335';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031321';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610031335';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031321';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610031335';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031321';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610031335';
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610031321';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610031335';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031321';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610031335';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031321';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610031335';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1338,7 +1338,7 @@
     }
     function drawGisi(t){
       const e = t - S.gisiT, step = S.gisi, D = step === 5 ? 2000 : 1150;
-      if(step > 0 && S.mode === 'spin'){
+      if(step > 0 && S.mode === 'spin' && !S.bt){
         g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, 6, 24, 54, 14, 7); g.fill();
         g.fillStyle = '#FFE14D'; g.font = 'bold 9px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle'; g.fillText(`擬似連×${step + 1}`, 11, 31); g.restore();
       }
@@ -1351,6 +1351,12 @@
         if(p.kind === 'bub'){ p.y -= .6; p.x += Math.sin(p.y/5)*.3; g.globalAlpha *= .8; g.strokeStyle = '#fff'; g.lineWidth = .8; g.beginPath(); g.arc(p.x, p.y, 1.6, 0, 6.283); g.stroke(); }
       }
       g.globalAlpha = 1;
+      const fe = t - (S.gfT || -1e9);
+      if(fe >= 0 && fe < 1400){
+        g.save(); g.globalAlpha = Math.min(1, (1400 - fe)/300); g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = '900 18px "M PLUS 1p", sans-serif'; g.lineJoin = 'round'; g.lineWidth = 5; g.strokeStyle = '#fff';
+        g.strokeText('発展ならず…', W/2, 78); g.fillStyle = '#5a6aaa'; g.fillText('発展ならず…', W/2, 78); g.restore();
+      }
       if(e > D || !step) return;
       const k = Math.min(1, e/200), out = e > D - 200 ? (D - e)/200 : 1;
       if(step === 3) drawCastle(78, 132, Math.min(1, e/300) * out);
@@ -1650,6 +1656,23 @@
       if(idx === 6 || idx === 21){ g.shadowColor = 'rgba(255,140,40,.9)'; g.shadowBlur = 14; }
       g.drawImage(MACHIDA, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -sz.w/2, -sz.h, sz.w, sz.h); g.restore();
     }
+    // アツさの星（★5つ中いくつ光るか）。S6ライバーは虹色の星
+    function drawStars(b, cx, cy, t){
+      const n = b.stars || 1, r = 5.5, gap = 13;
+      g.save(); g.fillStyle = 'rgba(0,0,0,.55)'; rrPath(g, cx - 38, cy - 8, 76, 16, 8); g.fill();
+      for(let i=0;i<5;i++){
+        const x = cx + (i - 2)*gap, on = i < n;
+        g.beginPath();
+        for(let k=0;k<10;k++){ const rr = k % 2 ? r*.45 : r, a = -Math.PI/2 + k*Math.PI/5; g.lineTo(x + Math.cos(a)*rr, cy + Math.sin(a)*rr); }
+        g.closePath();
+        if(on){
+          g.fillStyle = b.rainbow ? `hsl(${(t/3 + i*60) % 360},100%,60%)` : '#FFD23A';
+          g.shadowColor = g.fillStyle; g.shadowBlur = b.rainbow ? 10 : 6;
+        } else { g.fillStyle = 'rgba(255,255,255,.18)'; g.shadowBlur = 0; }
+        g.fill();
+      }
+      g.restore();
+    }
     function bText(text, y, size, color, stroke = '#2a0018', x = W/2){
       g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
       g.font = `900 ${size}px "M PLUS 1p", sans-serif`; g.lineWidth = size*.22; g.strokeStyle = stroke;
@@ -1745,7 +1768,7 @@
       if(A && A.type === 'intro'){
         const k = Math.min(1, ae/500);
         hx = -60 + k*138; fx = W + 60 - k*138;
-        if(ae > 300 && ae < 1800) txt = BATTLES[type].name;
+        if(ae > 300 && ae < 1800) txt = S.bDev && ae < 1000 ? 'バトル発展!!' : BATTLES[type].name;
       }
       if(A && A.type === 'final'){
         txt = ae < 1600 ? ({event:'結果発表！', s6:'ラスト勝負！'}[type] || '最終決戦！') : null;
@@ -1806,7 +1829,7 @@
       if(txt){
         const big = /WIN|優勝|撃破!!|復活|WINNER/.test(txt) && A && A.type === 'result';
         const col = resWin === false ? '#9FB8FF' : big ? '#FFE14D' : '#fff';
-        const p = 1 + .05*Math.sin(t/90), y = bubble ? 98 : 64;
+        const p = 1 + .05*Math.sin(t/90), y = bubble ? 98 : 80;
         const cx = (type === 'event' || type === 's6') ? 92 : W/2;   // 右側にボードや人がいる種類は左寄せ
         g.save(); g.translate(cx, y); g.scale(p, p); g.translate(-cx, -y);
         bText(txt, y, big ? 22 : 14, col, '#2a0018', cx); g.restore();
@@ -1817,6 +1840,7 @@
         g.save(); g.fillStyle = 'rgba(0,0,0,.6)'; rrPath(g, tx - 78, 44, 156, 13, 6); g.fill();
         g.fillStyle = '#FFE14D'; g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(`${BATTLES[type].name}　${b.game >= 5 ? 'FINAL' : `ROUND ${b.game}/5`}`, tx, 50.5); g.restore();
+        drawStars(b, tx, 64, t);
       }
     }
 
@@ -2192,7 +2216,8 @@
       setLucky(on){ S.lucky = on; },
       setPlayers(n){ S.players = n; },
       broadcast(text){ S.bq.push(text); comment(text, ['📣', 'お知らせ']); },
-      battleStart(b){ S.bt = {...b, hp:b.hp.slice()}; S.bhpView = [100,100]; S.bAct = {type:'intro', t0:performance.now()}; S.bT = performance.now();
+      gisiFail(){ S.gfT = performance.now(); sfx.battleLose(); },
+      battleStart(b, dev){ S.bDev = !!dev; S.bt = {...b, hp:b.hp.slice()}; S.bhpView = [100,100]; S.bAct = {type:'intro', t0:performance.now()}; S.bT = performance.now();
         comment(`${BATTLES[b.type].name}が始まった！`, pick(VIEWERS)); },
       battleRestore(b){ S.bt = {...b, hp:b.hp.slice()}; S.bhpView = b.hp.slice(); S.bAct = null; },
       battleAct(type, dmg, snap){ if(!S.bt) return; S.bAct = {type, dmg, snap, t0:performance.now()}; S.bt.game = state.battle ? state.battle.game : S.bt.game; },
@@ -2799,7 +2824,7 @@
     $('dExp').textContent = state.scene ? (EXPECT[state.scene]*100).toFixed(1) + '%' : '-';
     $('dGeki').textContent = `期待度 ${(GEKI_EXPECT*100).toFixed(1)}%`;
     { const be = battleExpect();
-      $('dBattle').textContent = `${state.battle ? `${BATTLES[state.battle.type].name} R${state.battle.game}（${state.battle.win ? '勝ち' : '負け'}）` : 'なし'}／期待度 全体${(be.all*100).toFixed(0)}%　`
+      $('dBattle').textContent = `${state.battle ? `${BATTLES[state.battle.type].name} R${state.battle.game}（${state.battle.win ? '勝ち' : '負け'}・星${state.battle.stars || '-'}）` : 'なし'}／期待度 全体${(be.all*100).toFixed(0)}%　`
         + Object.keys(BATTLES).map(k => `${BATTLES[k].name}${(be[k]*100).toFixed(0)}%`).join('・'); }
     $('dCut').textContent = ['green','red','rainbow'].map(c => `${{green:'緑',red:'赤',rainbow:'虹'}[c]} ${(expectOf(f => cutRow(f)[c] || 0)*100).toFixed(0)}%`).join(' / ');
     $('dGisi').textContent = `今回 ${state.gisi ? state.gisi + '段' : 'なし'}（③以上の期待度 ${(expectOf(f => gisiRow(f).slice(3).reduce((a,b)=>a+b,0))*100).toFixed(0)}%）`;
@@ -2874,17 +2899,31 @@
     gun:   {name:'通常バトル',          foe:'夜の帝王・黒服', winW:25, loseW:50},
     rap:   {name:'ラップバトル',        foe:'MCギフト',      winW:30, loseW:30},
     event: {name:'イベント出場',        foe:'ライバル配信者', winW:25, loseW:15},
-    s6:    {name:'S6ライバー全員を倒せ', foe:'S6ライバー',    winW:20, loseW:5}
+    s6:    {name:'S6ライバー全員を倒せ', foe:'S6ライバー',    winW:20, loseW:0}   // 出たら大当たり確定
   };
   const BATTLE_RATE = {BIG:.40, CHEM:.08, WML:.04, BEL:.04, CHE:.02, GRP:.004, RPL:.003, other:.002};
   const battleRate = f => isBig(f) ? BATTLE_RATE.BIG : (BATTLE_RATE[f] ?? BATTLE_RATE.other);
   function pickWeighted(obj, key){ const ks = Object.keys(obj); let r = Math.random()*ks.reduce((a,k)=>a+obj[k][key],0);
     for(const k of ks){ if(r < obj[k][key]) return k; r -= obj[k][key]; } return ks[0]; }
+  // バトルのアツさ（星1〜5）。勝つバトルほど星が多い。S6ライバーは虹色の星5つ（確定）
+  function pickStars(win){
+    const w = win ? [0, 0, .15, .40, .45] : [.45, .35, .15, .05, 0];
+    let r = Math.random(); for(let i=0;i<5;i++){ if(r < w[i]) return i + 1; r -= w[i]; } return win ? 4 : 1;
+  }
+  // 擬似連から発展するときの擬似連の段数（勝つバトルほど段数が多い）
+  function pickPreGisi(win){
+    const w = win ? [.12, .20, .26, .22, .20] : [.40, .30, .18, .09, .03];
+    let r = Math.random(); for(let i=0;i<5;i++){ if(r < w[i]) return i + 1; r -= w[i]; } return 1;
+  }
+  // ハズレ・小役の擬似連がバトルに発展する確率（段数が多いほど発展しやすい）
+  const GISI_DEV = [0, .08, .18, .35, .55, .75];
   function newBattle(win, comeback, type){
-    const t = type || pickWeighted(BATTLES, win ? 'winW' : 'loseW');
+    let t = type || pickWeighted(BATTLES, win ? 'winW' : 'loseW');
+    if(t === 's6' && !win) t = 'event';   // S6ライバーは勝ち確定なので、負けバトルにはしない
     // 1〜4G目の攻防（勝つバトルほどコウジ優勢の展開が多い）
     const turns = Array.from({length:4}, () => Math.random() < (win && !comeback ? .65 : .38) ? 'hero' : 'enemy');
-    return {type:t, win, comeback: !!comeback, game:1, turns, hp:[100,100], rank:5, alive:6, big:null};
+    return {type:t, win, comeback: !!comeback, game:1, turns, hp:[100,100], rank:5, alive:6, big:null,
+            stars: t === 's6' ? 5 : pickStars(win), rainbow: t === 's6'};
   }
   // バトルの種類ごとの7・BAR期待度（デバッグ表示用）
   function battleExpect(){
@@ -2971,17 +3010,36 @@
       if(on){ const st = SETTINGS[state.setting]; state.dupBig = Math.random() < st.S7/(st.S7 + st.BAR) ? 'S7' : 'BAR'; }
     }
     let hot = state.dupBig || state.flag;   // 演出の抽選に使う「本当の当選状況」
+    state.gisiSolo = null; state.preGisi = 0; state.introDelay = 0;
     // ---------- バトルリーチ ----------
     state.battleGame = false;
     if(!state.at && !state.cz && !state.peka && !state.carry){
       if(!state.battle){
-        const forced = dbg.battle;
-        if(forced || Math.random() < battleRate(hot)){
-          const win = forced ? forced !== 'lose' : isBig(hot);
+        // バトル開始の抽選。擬似連は「そのまま大当たり」にはせず、バトルに発展させる
+        //   7・BAR当選：40%でバトル（そのうち65%は擬似連を経由）。バトルにならないときは擬似連も出さない
+        //   ハズレ・小役：擬似連が出たら段数に応じて負けバトルに発展。発展しなければ「発展ならず」
+        const forced = dbg.battle, fg = (dbg.gisi !== null && dbg.gisi !== undefined) ? dbg.gisi : null, big = isBig(hot);
+        let start = false, win = false, pre = 0;
+        if(forced){ start = true; win = forced !== 'lose'; pre = fg ?? (Math.random() < .6 ? pickPreGisi(win) : 0); }
+        else if(big){ if(Math.random() < BATTLE_RATE.BIG){ start = true; win = true; pre = fg ?? (Math.random() < .65 ? pickPreGisi(true) : 0); } }
+        else {
+          const g0 = fg ?? pickGisi(hot);
+          state.gisiSolo = g0;
+          if(g0 > 0){ if(Math.random() < GISI_DEV[g0]){ start = true; pre = g0; state.gisiSolo = 0; } }
+          else if(Math.random() < battleRate(hot)) start = true;
+        }
+        if(start){
           state.battle = newBattle(win, forced === 'comeback', dbg.enemy);   // dbg.enemy＝バトルの種類
-          if(win) state.battle.big = isBig(hot) ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR');
-          screen.battleStart(state.battle); sfx.battleStart();
-          setTimeout(() => { if(state.battle && state.battle.game === 1) battleTurn(0); }, 1900);
+          if(state.battle.type === 's6' || state.battle.win){ state.battle.win = true;
+            state.battle.big = big ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR'); }
+          state.preGisi = pre;
+          const intro = () => { if(state.battle && state.battle.game === 1){ screen.battleStart(state.battle, pre > 0); sfx.battleStart();
+            setTimeout(() => { if(state.battle && state.battle.game === 1) battleTurn(0); }, 1900); } };
+          if(pre > 0){
+            // 擬似連を見せ終わってから「バトル発展!!」
+            state.introDelay = GISI_START + (pre - 1)*GISI_GAP + (pre === 5 ? GISI5_HOLD : 1200);
+            setTimeout(intro, state.introDelay);
+          } else { state.introDelay = 0; intro(); }
         }
       } else if(state.battle.game < 5){
         battleTurn(state.battle.game - 1);
@@ -3031,7 +3089,15 @@
     state.geki = !state.at && !state.peka && !state.battleGame && (dbg.geki ? dbg.geki === 'on' : Math.random() < gekiRate(hot));
     // --- カットイン・擬似連の抽選（通常時のみ）---
     state.cutin = state.at || state.battleGame ? null : (dbg.cut ? (dbg.cut === 'none' ? null : dbg.cut) : pickCutin(hot));
-    state.gisi = state.at || state.peka || state.battleGame ? 0 : (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
+    {
+      let gs = 0;
+      if(!state.at && !state.peka){
+        if(state.battle && state.battle.game === 1 && state.preGisi) gs = state.preGisi;            // バトルに発展する擬似連
+        else if(!state.battleGame && !isBig(hot))                                                     // 発展しない擬似連（ガセ）
+          gs = state.gisiSolo ?? (dbg.gisi !== null && dbg.gisi !== undefined ? dbg.gisi : pickGisi(hot));
+      }
+      state.gisi = gs;
+    }
     state.gisiDone = 0;
     if(state.gisi === 5) state.geki = false; // ⑤で全画面の激アツが出るので第2停止の激アツは出さない
     // カットインがあるときは、見終わってから擬似連を始める
@@ -3040,6 +3106,12 @@
     state.lockUntil = state.gisi ? performance.now() + GISI_START + state.gisiDelay + (state.gisi - 1)*GISI_GAP + GISI_FREEZE + 250 : 0;
     // ⑤は液晶で2秒見せたあと全画面の激アツ。終わるまでSTOPを受け付けない
     if(state.gisi === 5) state.lockUntil += GISI5_HOLD;
+    if(state.introDelay) state.lockUntil = Math.max(state.lockUntil, performance.now() + state.introDelay + 300);
+    else if(state.gisi && !state.battle){
+      // 発展しなかった擬似連：最後の段のあとに「発展ならず…」
+      const endAt = GISI_START + state.gisiDelay + (state.gisi - 1)*GISI_GAP + (state.gisi === 5 ? GISI5_HOLD : 1150);
+      setTimeout(() => screen.gisiFail(), endAt);
+    }
     if(state.gisi) setTimeout(updateUI, state.lockUntil - performance.now() + 20);
     // このゲームの演出（カットイン・擬似連）が終わる時刻。大当たり確定の全画面演出はこれを待ってから出す
     { const now = performance.now(); let busy = state.gisiDelay ? now + CUT_DUR : 0;
@@ -3128,7 +3200,7 @@
           reels.forEach(r => { r.p = mod(Math.round(r.p), N); render(r); });
           screen.gisi(k); sfx.gisi(k); setTimeout(sfx.ooi, 120);
           const w = document.querySelector('.window'); w.classList.remove('gshake'); void w.offsetWidth; w.classList.add('gshake');
-          if(k === 5) setTimeout(() => { if(!state.peka) geki.start({title:'追いメガポコナイト〜🔥'}); }, GISI5_HOLD);
+          if(k === 5) setTimeout(() => { if(!state.peka && !state.battle) geki.start({title:'追いメガポコナイト〜🔥'}); }, GISI5_HOLD);
         }
       } else v = SPEED * Math.min(1, (ts - b - GISI_FREEZE) / 250);
     }
@@ -3463,7 +3535,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610031321';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610031335';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
