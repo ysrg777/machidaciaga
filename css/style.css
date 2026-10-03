@@ -185,9 +185,9 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 #fx{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;pointer-events:none;z-index:40}
 #gekiatsu{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:45;cursor:pointer}
 #gekiatsu[hidden]{display:none}
-#bonusIn{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:46;cursor:pointer}
+#bonusIn{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:46;cursor:default}
 #bonusIn[hidden]{display:none}
-#kakutei{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:47;cursor:pointer}
+#kakutei{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;z-index:47;cursor:default}
 #kakutei[hidden]{display:none}
 /* フリーズ：画面全体が暗転し、最後に白く光る */
 .freeze{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,0);pointer-events:none;transition:background-color .15s;

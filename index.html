@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610040049">
+<link rel="stylesheet" href="css/style.css?ver=202610040104">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -142,6 +142,9 @@
       <option value="1">設定1（80%）</option><option value="2">設定2（90%）</option><option value="3">設定3（105%）</option>
       <option value="4">設定4（120%）</option><option value="5">設定5（150%）</option><option value="6">設定6（200%）</option>
     </select></label>
+    <label>動画<select id="videoQ">
+      <option value="sd">標準</option><option value="hd">高画質</option>
+    </select></label>
     <label>リール<select id="reelSpeed">
       <option value="slow">ゆっくり</option><option value="normal">ふつう</option><option value="fast">はやい</option>
     </select></label>
@@ -220,9 +223,8 @@
 <div class="bigwin" id="bigwin" hidden>
   <div class="bw-text" id="bwText">BIG WIN!!</div>
   <div class="bw-amount" id="bwAmount">+0</div>
-  <div class="bw-tap">タップで閉じる</div>
 </div>
 
-<script src="js/main.js?ver=202610040049"></script>
+<script src="js/main.js?ver=202610040104"></script>
 </body>
 </html>
