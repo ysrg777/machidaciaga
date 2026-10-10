@@ -43,14 +43,14 @@
     ['S7',    164]  // 約1/400
   ];
   // 設定1〜6：7とBARの確率（65536分率）を変えて出玉率を調整。
-  // 出玉率は「ランプ点灯後に7・BARを揃え、ATを消化した場合」のシミュレーション値（チャンスステージ込み）
+  // 出玉率は「ランプ点灯後に7・BARを揃え、ATを消化した場合」のシミュレーション値（チャンスステージ・引き戻し・天井込み）
   const SETTINGS = {
-    1:{S7:27,   BAR:53,   rtp:80},
-    2:{S7:73,   BAR:147,  rtp:90},
-    3:{S7:167,  BAR:333,  rtp:105},
-    4:{S7:300,  BAR:600,  rtp:120},
-    5:{S7:783,  BAR:1567, rtp:150},
-    6:{S7:3600, BAR:7200, rtp:200}
+    1:{S7:83,  BAR:166,  rtp:96},
+    2:{S7:96,  BAR:192,  rtp:99},
+    3:{S7:125, BAR:250,  rtp:104},
+    4:{S7:168, BAR:336,  rtp:111},
+    5:{S7:274, BAR:548,  rtp:124},
+    6:{S7:567, BAR:1134, rtp:150}
   };
   // 小役の「アツさ」：小役に当選したとき、さらに7・BARの抽選を行う（重複当選）
   const DUP = {RPL:.001, GRP:.005, WML:.05, BEL:.01, CHE:.10, CHEM:.50};
@@ -307,15 +307,15 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610041736', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610041736', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610041736', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610041736', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610041736', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610041736', 'sevenAlignBuf');
-        load('assets/sound/bonusin_snd.mp3?ver=202610041736', 'bonusinBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610041736', 'bonusBuf'), 300);
-        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610041736', 'barBgmBuf'), 400);
+        load('assets/sound/ooi.mp3?ver=202610101432', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610101432', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610101432', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610101432', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610101432', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610101432', 'sevenAlignBuf');
+        load('assets/sound/bonusin_snd.mp3?ver=202610101432', 'bonusinBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610101432', 'bonusBuf'), 300);
+        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610101432', 'barBgmBuf'), 400);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -533,6 +533,18 @@
     srReveal(){ audio.noise(0,.2,.4,3000,'highpass'); [659,880,1175,1568].forEach((f,k)=>audio.tone(f,.05 + k*.07,.22,{type:'triangle',vol:.1})); },
     uwanose(){ [784,1047,1319,1568,2093].forEach((f,k)=>audio.tone(f,k*.05,.18,{type:'square',vol:.07})); audio.noise(0,.2,.25,3000,'highpass'); },
     zoneIn(){ audio.tone(110,0,.8,{type:'sawtooth',vol:.12,to:440}); [523,659,784,1047].forEach((f,k)=>audio.tone(f,.6 + k*.08,.3,{type:'square',vol:.08})); },
+    breakStart(){ for(let k=0;k<3;k++) audio.tone(880,k*.22,.12,{type:'square',vol:.08}); audio.tone(110,0,.6,{type:'sawtooth',vol:.1,to:220}); },
+    // 連打音：バキッ（ガラス）＋ドン（低いパンチ）＋ピュイッ（だんだん高く）＋キン（金属）
+    crack(p){
+      audio.noise(0,.09,.9,3500 + p*3000,'highpass');
+      audio.noise(0,.05,.7,900);
+      audio.tone(160,0,.09,{type:'sine',vol:.45,to:60});
+      audio.tone(900 + p*1400,0,.08,{type:'square',vol:.12,to:2400 + p*2400});
+      audio.tone(2600 + p*1600,.02,.06,{type:'triangle',vol:.14});
+    },
+    countBeep(sec){ audio.tone(sec <= 2 ? 1760 : 1320,0,.09,{type:'square',vol:.12}); },
+    thud(){ audio.tone(90,0,.14,{type:'sine',vol:.35}); audio.noise(0,.06,.3,400); },
+    shatter(){ audio.noise(0,.5,.9,3000,'highpass'); audio.noise(0,.25,.6,600); [3136,3520,4186,4699,5274].forEach((f,k)=>audio.tone(f,.05 + k*.05,.15,{type:'sine',vol:.06})); },
     staff(){ [880,1175,1568].forEach((f,k)=>audio.tone(f,k*.1,.16,{type:'sine',vol:.08})); },
     czIn(){ [523,659,784,988,1175,1568].forEach((f,k)=>audio.tone(f,k*.07,.22,{type:'square',vol:.07})); audio.noise(0,.3,.2,3000,'highpass'); },
     czEnd(){ [784,659,523,392].forEach((f,k)=>audio.tone(f,k*.12,.25,{type:'triangle',vol:.08})); },
@@ -867,50 +879,50 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610041736';
+  HERO.src = 'assets/img/haishin.webp?ver=202610101432';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610041736';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610101432';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610041736';
+  OJII.src = 'assets/img/ojii.webp?ver=202610101432';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610041736';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610101432';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610041736';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610101432';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610041736';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610101432';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610041736';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610101432';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610041736';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610101432';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610041736';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610101432';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610041736';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610101432';
   // 777ボーナス中の液晶背景：ループ動画（640×320・約40秒・無音。曲はボーナスBGMのまま）
   const ATV = document.createElement('video');
   ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
-  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610041736';
-  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610041736';
-  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610041736';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610101432';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610101432';
+  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610101432';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
   const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
   // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒）。音声は別の音源で動画と同時に鳴らす
   const BV = document.createElement('video');
   BV.muted = true; BV.playsInline = true; BV.setAttribute('playsinline', ''); BV.setAttribute('muted', ''); BV.preload = 'auto';
-  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610041736';
-  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610041736';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
-  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610041736';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
+  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610101432';
+  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610101432';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
+  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610101432';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
   // 動画の画質：標準／高画質（設定欄で切り替え）。H.264が使えないブラウザはWebM（標準画質）
   const videoQ = () => { try { return JSON.parse(localStorage.getItem('slot.vq')) || 'sd'; } catch(e){ return 'sd'; } };
   const canMp4 = BV.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '';
@@ -926,12 +938,12 @@
   const bvReady = () => BV.readyState >= 2 && BV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610041736';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610101432';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610041736';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610101432';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610041736';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610101432';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2062,6 +2074,10 @@
       srHeader(SR_TYPES[sr.type].name, t);
       const big = txt => { const p = 1 + .05*Math.sin(t/90); g.save(); g.translate(W/2, 64); g.scale(p, p); g.translate(-W/2, -64); bText(txt, 64, 18, '#FFE14D'); g.restore(); };
 
+      if(sr.type === 'break'){
+        drawHeroSprite(4, 60, 158, 74);
+        bText(sr.d.done ? (sr.success ? '画面を割った!!' : '割れなかった…') : '画面を割れ！', 70, 16, sr.d.done && sr.success ? '#FFE14D' : '#fff', '#5a0010');
+      }
       if(sr.type === 'icon'){
         const pk = sr.d.picked, xs = [70, 160, 250];
         xs.forEach((x, i) => {
@@ -2294,14 +2310,20 @@
     const pick2 = (a, seed) => a[seed % a.length];
 
     // --- チャンスステージ ---
-    const POSE = {
-      idle:  [0, 2, 4, 6, 8, 11, 15],   // 決めポーズ・サングラス・後ろ姿など
-      happy: [1, 7, 13, 14, 3],         // 両手を広げる・笑顔・乾杯・ピース・歌う
-      love:  [5, 9],                    // ハート
-      sad:   [12],                      // 叫び・汗
-      look:  [10, 6]                    // 前のめり・振り返り
+    // 5×5 のコマ送りアニメ（1行＝1種類×5コマ）。0-4歩く / 5-9ジャンプ / 10-14指さし / 15しゃがみ,16-19走る / 20-24ハート・グッド・驚き・後ろ姿
+    const CLIP = {
+      walk:  {f:[0,1,2,3,4], fps:8, loop:0},
+      run:   {f:[16,17,18,19], fps:13, loop:0},
+      dash:  {f:[15,15,15,16,17,18,19], fps:12, loop:3},
+      jump:  {f:[5,6,7,8,9], fps:8, hold:1300},
+      point: {f:[10,11,12,13,14], fps:8, hold:1100},
+      love:  {f:[20,21], fps:2.5, loop:0, dur:2600},
+      thumb: {f:[22], fps:1, hold:1500},
+      wow:   {f:[23], fps:1, hold:1600},
+      back:  {f:[24], fps:1, hold:1400}
     };
-    function setPose(kind){ const a = POSE[kind]; let p; do { p = pick(a); } while(a.length > 1 && p === S.pose); S.pose = p; S.poseT = performance.now(); }
+    const POSE = { happy:['jump','jump','point','thumb'], love:['love'], sad:['wow'], look:['dash','dash','point'] };
+    function setPose(kind){ S.clip = kind === 'idle' ? null : pick(POSE[kind]); S.poseT = performance.now(); }
     function drawCZ(t){
       // 背景：夜景をゆっくり左右にパン
       if(CZ_BG.complete && CZ_BG.naturalWidth){
@@ -2314,14 +2336,51 @@
       // 舞い上がる光
       for(let k=0;k<14;k++){ const x = (k*53 + t/30) % W, y = H - ((t/18 + k*37) % H); g.globalAlpha = .5; g.fillStyle = k%2 ? '#FFE38A' : '#FFB3E6'; g.fillRect(x, y, 1.6, 1.6); }
       g.globalAlpha = 1;
-      // キャラ（ポーズを切り替えながら弾む）
-      if(t - S.poseT > 2600 && S.mode !== 'spin') setPose('idle');
+      // キャラ（コマ送りで歩く・走る・跳ねる）
       if(CZ_SPRITES.complete && CZ_SPRITES.naturalWidth){
-        const pe = t - S.poseT, pop = pe < 240 ? 1 + .05*Math.sin(pe/240*Math.PI) : 1;
-        const beat = t/1000*132/60, hop = Math.abs(Math.sin(beat*Math.PI))*3;
-        const sz = spriteSize(CZ_SPRITES, S.pose, 122, 210), dw = sz.w*pop, dh = sz.h*pop;
-        g.save(); g.translate(160, 162 - hop); g.rotate(Math.sin(beat*Math.PI)*.04);
-        g.drawImage(CZ_SPRITES, sz.b.x, sz.b.y, sz.b.w, sz.b.h, -dw/2, -dh, dw, dh); g.restore();
+        const dt = Math.min(60, t - (S.czLast || t)); S.czLast = t;
+        let name = S.clip, c = name && CLIP[name], el = t - S.poseT;
+        if(c){
+          const len = c.f.length*1000/c.fps;
+          if(c.dur ? el > c.dur : (c.loop === undefined && el > len + (c.hold || 0))) name = S.clip = null;
+          if(name === 'dash' && S.mode !== 'spin') name = S.clip = null;
+        }
+        if(!name){
+          const want = S.mode === 'spin' ? 'run' : 'walk';
+          if(S.czBase !== want){ S.czBase = want; S.czBaseT = t; }
+          // 待機中はたまに振り返る
+          if(want === 'walk' && t - (S.czBackT || 0) > 9000 && Math.random() < .004){ S.czBackT = t; S.clip = 'back'; S.poseT = t; }
+          name = S.clip || want; el = name === want ? t - S.czBaseT : 0;
+        }
+        c = CLIP[name];
+        let i = Math.floor(el/1000*c.fps);
+        if(c.loop !== undefined){ if(i >= c.f.length) i = c.loop + (i - c.loop) % (c.f.length - c.loop); }
+        else i = Math.min(i, c.f.length - 1);
+        const fr = c.f[i];
+        // 位置：歩くときは左右を往復、それ以外は中央へ戻る
+        if(S.czX === undefined){ S.czX = 160; S.czDir = 1; }
+        if(name === 'walk'){
+          S.czX += S.czDir*dt*.026;
+          if(S.czX > 250){ S.czX = 250; S.czDir = -1; } if(S.czX < 70){ S.czX = 70; S.czDir = 1; }
+        } else { S.czX += (150 - S.czX)*Math.min(1, dt*.004); if(name === 'run' || name === 'dash' || name === 'jump') S.czDir = 1; }
+        const running = name === 'run' || (name === 'dash' && i >= 3);
+        // 走るときは流れる線と土ぼこり
+        if(running){
+          g.save();
+          for(let k=0;k<9;k++){ const y = 40 + (k*29 % 110), x = W - ((t*.55 + k*97) % (W + 80)); g.globalAlpha = .35; g.fillStyle = '#fff'; g.fillRect(x, y, 26 + (k%3)*14, 1.4); }
+          for(let k=0;k<4;k++){ const e = ((t/420 + k/4) % 1), x = S.czX - 18 - e*40, y = 160 - e*10; g.globalAlpha = (1 - e)*.45; g.fillStyle = '#e8dccb'; g.beginPath(); g.arc(x, y, 2 + e*5, 0, Math.PI*2); g.fill(); }
+          g.restore();
+        }
+        let lift = 0;
+        if(name === 'jump' && (i === 2 || i === 3)){ const ph = (el - 2*1000/c.fps)/(2*1000/c.fps); lift = Math.sin(Math.max(0, Math.min(1, ph))*Math.PI)*16; }
+        else if(name === 'walk') lift = Math.abs(Math.sin(el/1000*c.fps*Math.PI))*1.2;
+        else if(running) lift = Math.abs(Math.sin(el/1000*c.fps*Math.PI/2))*2.5;
+        const pe = t - S.poseT, pop = S.clip && pe < 220 ? 1 + .05*Math.sin(pe/220*Math.PI) : 1;
+        const cell = CZ_SPRITES.naturalWidth/5, sc = 124/cell*pop, d = cell*sc;
+        // 影
+        g.save(); g.globalAlpha = .28 - lift*.01; g.fillStyle = '#000'; g.beginPath(); g.ellipse(S.czX, 161, 24 - lift*.5, 4, 0, 0, Math.PI*2); g.fill(); g.restore();
+        g.save(); g.translate(S.czX, 163 - lift); if(S.czDir < 0 && name === 'walk') g.scale(-1, 1);
+        g.drawImage(CZ_SPRITES, (fr % 5)*cell, Math.floor(fr / 5)*cell, cell, cell, -d/2, -d, d, d); g.restore();
       }
       // 残りゲーム数（継続ジャッジ中はジャッジ表示に切り替え）
       if(S.cz && S.cz.left > 5){
@@ -3199,7 +3258,10 @@
   // ================================================================
   const OJ_NAME = {OJ0:'押し順ぶどう（左→中→右）', OJ1:'押し順ぶどう（中→左→右）', OJ2:'押し順ぶどう（右→左→中）'};
   const flagName = f => f ? (OJ_NAME[f] || SYM[f].name) : 'ハズレ';
-  function setMsg(t){ msgEl.textContent = t; }
+  function setMsg(t){
+    msgEl.textContent = t;
+    msgEl.classList.toggle('alert', /狙え|ボーナス！|確定|点灯/.test(t));   // 大事なお知らせは目立たせる
+  }
   function updateUI(){
     if(typeof checkMilestones === 'function') checkMilestones();
     $('credit').textContent = state.credits;
@@ -3306,7 +3368,7 @@
   // ================================================================
   const UWA_RATE = .25, UWA_AMOUNTS = [10, 10, 20, 20, 30, 50];
   const ZONE_RATE = 1/150, ZONE_GAMES = 5, ZONE_AMOUNTS = [10, 15, 15, 20, 30];
-  const HIKI_GAMES = 10, HIKI_MULT = 3;
+  const HIKI_GAMES = 10, HIKI_MULT = 1.5;
   function hikiTable(){
     const S7 = TABLE.find(t => t[0] === 'S7')[1] * HIKI_MULT, BAR = TABLE.find(t => t[0] === 'BAR')[1] * HIKI_MULT;
     const tot = S7 + BAR, k = tot > 30000 ? 30000/tot : 1;
@@ -3324,6 +3386,164 @@
   function settingHint(){ const n = state.setting - 1; return HINTS[pickIdx(HINTS.map(h => h.w[n]))].t; }
 
   // ================================================================
+  // 連打演出「OVER THE LIMIT!!」：パトランプを連打して、画面全体のガラスを割る
+  //   連打するたびにひび割れが少しずつ広がる。割れたらチャンス（結果は開始時に決まっている）
+  //   割れない結果のときは、ひびが途中で止まって「割れなかった…」
+  // ================================================================
+  const breakFx = (() => {
+    const box = $('breakFx'), cv = $('breakCv'), c = cv.getContext('2d');
+    const TAPS = 22, LIMIT = 6000;   // 割るのに必要な連打数の目安・制限時間
+    let active = false, success = false, onEnd = null, t0 = 0, p = 0, shown = 0, taps = 0, phase = 'tap', phaseT = 0, lastSec = 6;
+    let W = 0, H = 0, dpr = 1, cx = 0, cy = 0, radials = [], rings = [], twigs = [], shards = [], shakeT = -1e9, autoTimer = null;
+    const R = () => Math.hypot(W, H) * .62;
+    function build(){
+      const r = box.getBoundingClientRect(); dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = r.width || innerWidth; H = r.height || innerHeight; cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+      cx = W/2; cy = H*.46;
+      // 放射状のひび（14本）：中心から外へ、少しずつ曲がりながら伸びる
+      radials = []; const n = 14;
+      for(let i=0;i<n;i++){
+        let a = i/n*Math.PI*2 + (Math.random()-.5)*.25, x = cx, y = cy; const pts = [[x, y]];
+        for(let k=1;k<=10;k++){ a += (Math.random()-.5)*.22; const len = R()/10*(.8 + Math.random()*.4); x += Math.cos(a)*len; y += Math.sin(a)*len; pts.push([x, y]); }
+        radials.push(pts);
+      }
+      // 同心円状のひび：放射状のひびの同じ段どうしをつなぐ
+      rings = []; for(const k of [1,2,3,5,7]) rings.push(k);
+      // 細かい枝分かれ
+      twigs = [];
+      for(let i=0;i<40;i++){ const r0 = radials[i % n], k = 1 + Math.floor(Math.random()*8), [x, y] = r0[k];
+        const a = Math.random()*Math.PI*2, l = 10 + Math.random()*40; twigs.push({k, x, y, x2: x + Math.cos(a)*l, y2: y + Math.sin(a)*l}); }
+    }
+    function start(ok, cb){
+      if(active){ cb && cb(); return; }
+      success = ok; onEnd = cb; active = true; p = 0; shown = 0; taps = 0; phase = 'intro'; shards = [];
+      box.className = 'break'; box.hidden = false; build(); t0 = phaseT = performance.now() + 1e9;
+      $('breakLamp').disabled = true; $('breakMsg').textContent = '';
+      $('breakCount').textContent = (LIMIT/1000).toFixed(2); $('breakCount').className = 'br-count'; lastSec = Math.ceil(LIMIT/1000);
+      // ①「画面を割れ！！」がドン → ② 見出しの位置へ上がって「OVER THE LIMIT!!」 → ③ 連打スタート
+      void box.offsetWidth; sfx.breakStart();
+      setTimeout(() => { if(!active) return; box.classList.add('ready'); sfx.thud(); }, 1000);
+      setTimeout(() => {
+        if(!active) return;
+        phase = 'tap'; t0 = phaseT = performance.now(); box.classList.add('tapping');
+        $('breakLamp').disabled = false; $('breakMsg').textContent = 'パトランプを連打！';
+        if(autoOn) autoTimer = setInterval(tap, 180);   // オートプレイ中は自動で連打
+      }, 1600);
+      requestAnimationFrame(loop);
+    }
+    function tap(){
+      if(!active || phase !== 'tap') return;
+      taps++; shakeT = performance.now();
+      const cap = success ? 1 : .8;                      // 割れない結果のときは8割で止まる
+      const before = p; p = Math.min(cap, p + 1/TAPS);
+      if(p > before) sfx.crack(p); else { sfx.thud(); $('breakMsg').textContent = 'ビクともしない…!?'; }
+      if(success && p >= 1) shatter();
+      // バイブ（対応している端末のみ。iPhoneのSafariなどは非対応）
+      try { if(navigator.vibrate) navigator.vibrate(p >= 1 ? [80, 40, 160] : 30 + Math.round(p*30)); } catch(e){}
+    }
+    function shatter(){
+      phase = 'shatter'; phaseT = performance.now(); $('breakLamp').disabled = true; box.classList.remove('tapping'); box.classList.add('done');
+      // 破片：放射状のひび2本と同心円2本で囲まれた四角形
+      shards = [];
+      const ks = [0].concat(rings, [10]);
+      for(let i=0;i<radials.length;i++){
+        const A = radials[i], B = radials[(i + 1) % radials.length];
+        for(let j=0;j<ks.length - 1;j++){
+          const k1 = ks[j], k2 = ks[j + 1];
+          const poly = [A[k1], A[k2], B[k2], B[k1]];
+          const mx = poly.reduce((s,q)=>s+q[0],0)/4, my = poly.reduce((s,q)=>s+q[1],0)/4;
+          const dir = Math.atan2(my - cy, mx - cx), sp = 2 + Math.random()*5;
+          shards.push({poly: poly.map(([x,y]) => [x - mx, y - my]), x: mx, y: my, vx: Math.cos(dir)*sp, vy: Math.sin(dir)*sp - 3, r: 0, vr: (Math.random()-.5)*.2});
+        }
+      }
+      sfx.shatter(); $('breakMsg').textContent = '';
+    }
+    function finish(){
+      if(!active) return; active = false; clearInterval(autoTimer); box.hidden = true;
+      const f = onEnd; onEnd = null; f && f(success);
+    }
+    function crackPath(frac){
+      // frac：0〜1 でひびの伸び具合
+      c.beginPath();
+      for(const pts of radials){
+        const segs = (pts.length - 1)*Math.min(1, frac*1.05);
+        c.moveTo(pts[0][0], pts[0][1]);
+        for(let k=1;k<=Math.ceil(segs);k++){ const f = Math.min(1, segs - (k - 1)); const [x0,y0] = pts[k-1], [x1,y1] = pts[k]; c.lineTo(x0 + (x1 - x0)*f, y0 + (y1 - y0)*f); }
+      }
+      rings.forEach((k, ri) => {
+        const need = (ri + 1)/(rings.length + 1); if(frac < need) return;
+        const part = Math.min(1, (frac - need)*4);
+        for(let i=0;i<radials.length*part;i++){ const a = radials[i][k], b = radials[(i + 1) % radials.length][k]; c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+      });
+      for(const tw of twigs){ if(frac*10 < tw.k + 1) continue; c.moveTo(tw.x, tw.y); c.lineTo(tw.x2, tw.y2); }
+    }
+    function loop(t){
+      if(!active) return;
+      try {
+        const e = t - t0;
+        shown += (p - shown)*.25;
+        c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+        const sh = Math.max(0, 1 - (t - shakeT)/180)*6;
+        c.save(); c.translate((Math.random()-.5)*sh, (Math.random()-.5)*sh);
+        if(phase === 'tap' || phase === 'fail' || phase === 'intro'){
+          // ガラス面（うっすら青い反射）
+          const gl = c.createLinearGradient(0, 0, W, H); gl.addColorStop(0, 'rgba(180,220,255,.16)'); gl.addColorStop(.5, 'rgba(255,255,255,.05)'); gl.addColorStop(1, 'rgba(180,220,255,.18)');
+          c.fillStyle = 'rgba(0,0,10,.45)'; c.fillRect(0,0,W,H); c.fillStyle = gl; c.fillRect(0,0,W,H);
+          if(shown > .01){
+            c.lineCap = 'round'; c.lineJoin = 'round';
+            crackPath(shown); c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 3.2; c.stroke();
+            crackPath(shown); c.strokeStyle = 'rgba(255,255,255,.95)'; c.lineWidth = 1.4; c.shadowColor = '#bfe6ff'; c.shadowBlur = 6; c.stroke(); c.shadowBlur = 0;
+            const ir = 6 + shown*28; const ig = c.createRadialGradient(cx, cy, 0, cx, cy, ir); ig.addColorStop(0, 'rgba(255,255,255,.9)'); ig.addColorStop(1, 'rgba(255,255,255,0)');
+            c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, ir, 0, 6.283); c.fill();
+          }
+          // 時間切れ
+          if(phase === 'tap' && e > LIMIT){
+            if(success){ p = 1; shatter(); }
+            else { phase = 'fail'; phaseT = t; $('breakLamp').disabled = true; box.classList.remove('tapping'); $('breakMsg').textContent = '割れなかった…'; sfx.battleLose(); }
+          }
+          // 残り時間：カウントダウン（1秒ごとにピッ、残り2秒で赤く脈打つ）
+          if(phase === 'tap'){
+            const rem = Math.max(0, LIMIT - e), el = $('breakCount');
+            el.textContent = (rem/1000).toFixed(2);
+            const sec = Math.ceil(rem/1000);
+            if(sec < lastSec){ lastSec = sec; sfx.countBeep(sec); if(sec > 2){ el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); } }
+            if(rem <= 2000) el.classList.add('hurry');
+          } else if(phase !== 'intro') $('breakCount').classList.remove('hurry');
+          if(phase === 'fail' && t - phaseT > 1600) finish();
+        } else {
+          // 粉々に割れて、破片が落ちていく
+          const se = t - phaseT;
+          if(se < 160){ c.fillStyle = `rgba(255,255,255,${1 - se/160})`; c.fillRect(0,0,W,H); }
+          for(const s of shards){
+            s.vy += .35; s.x += s.vx; s.y += s.vy; s.r += s.vr;
+            c.save(); c.translate(s.x, s.y); c.rotate(s.r); c.globalAlpha = Math.max(0, 1 - se/1400);
+            c.beginPath(); s.poly.forEach(([x,y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath();
+            c.fillStyle = 'rgba(190,225,255,.35)'; c.fill(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.2; c.stroke(); c.restore();
+          }
+          // CHANCE!!
+          const k = Math.min(1, se/250); let fs = Math.min(W*.2, 120);
+          c.save(); c.globalAlpha = Math.min(1, se/200) * (se > 1900 ? Math.max(0, (2200 - se)/300) : 1);
+          c.translate(W/2, H*.46); c.scale(.6 + .4*k, .6 + .4*k); c.transform(1, 0, -.15, 1, 0, 0);
+          c.font = `900 ${fs}px "Titan One","M PLUS 1p",Impact,sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+          c.lineWidth = fs*.2; c.strokeStyle = '#2a0010'; c.strokeText('CHANCE!!', 0, 0);
+          const gr = c.createLinearGradient(-W*.4, 0, W*.4, 0), o = (t/4) % 360; for(let i=0;i<=6;i++) gr.addColorStop(i/6, `hsl(${(o + i*55) % 360},100%,60%)`);
+          c.fillStyle = gr; c.shadowColor = '#FFD23A'; c.shadowBlur = 20; c.fillText('CHANCE!!', 0, 0); c.restore();
+          if(se > 2200) finish();
+        }
+        c.restore();
+      } catch(err){ console.error(err); finish(); return; }
+      requestAnimationFrame(loop);
+    }
+    // 画面のどこをタップしても連打として反応（パトランプはタップのたびに押し込まれる）
+    box.addEventListener('pointerdown', e => {
+      e.preventDefault(); audio.init(); if(phase !== 'tap') return;
+      tap();
+      const lamp = $('breakLamp'); lamp.classList.remove('hit'); void lamp.offsetWidth; lamp.classList.add('hit');
+    });
+    return {start, get active(){ return active; }};
+  })();
+
+  // ================================================================
   // 特殊リーチ（6種類）：ゲームをまたいで進むリーチ。結果は開始時に決まっている
   //   成功したときの行き先：大当たり／バトル発展／チャンスステージ
   //   7・BAR当選のゲームで始まった場合、当たりは結果発表まで保留する（バトルと同じ）
@@ -3334,12 +3554,13 @@
     carriage:   {name:'かぼちゃの馬車に乗り込め！', w:16},
     family:     {name:'ファミリーよ！集結しろ！',   w:16},
     house:      {name:'コウジ、家を買う。',         w:16},
-    hashiguchi: {name:'誰かが配信に遊びに来た！',   w:18}
+    hashiguchi: {name:'誰かが配信に遊びに来た！',   w:18},
+    break:      {name:'OVER THE LIMIT!!',          w:16}
   };
   const SR_RATE = {BIG:0, CHEM:.08, WML:.04, BEL:.04, CHE:.015, other:.003};   // 7・BAR当選時は告知ルート（前兆）から発生
   const srRate = f => isBig(f) ? SR_RATE.BIG : (SR_RATE[f] ?? SR_RATE.other);
   // ハズレ・小役で始まったときに成功する確率（7・BARのときは必ず成功）
-  const SR_GASA_WIN = {icon:.25, audition:0, carriage:0, family:.25, house:.15, hashiguchi:.20};
+  const SR_GASA_WIN = {icon:.25, audition:0, carriage:0, family:.25, house:.15, hashiguchi:.20, break:.25};
   const AUDITION_NG = ['・・・', 'コインがありません！', '来月頑張らせてください！', 'なうならいけます！'];
   const FAMILY_LINES = ['なにがファミリーだよ💢', 'いいんだね？💢', '今日来ないやつはファミリーじゃない', '既読スルーは許さんぞ💢',
                         '推しは推せるときに推せって言ったよね？', '寝たやつ全員覚えとくからな', '枠閉じるぞ💢', 'ファミリー解散です'];
@@ -3381,6 +3602,7 @@
       sr.outcome = success ? (bigKey ? 'big' : 'cz') : 'none';
     }
     if(t === 'hashiguchi'){ sr.len = 3; sr.outcome = success ? 'battle' : 'none'; }
+    if(t === 'break'){ sr.d.done = false; sr.outcome = success ? (bigKey || Math.random() < .5 ? 'battle' : 'cz') : 'none'; }
     if(sr.outcome === 'big' && !sr.big) sr.big = Math.random() < 1/3 ? 'S7' : 'BAR';   // デバッグで成功させたとき用
     return sr;
   }
@@ -3855,6 +4077,11 @@
     // ⑤は液晶で2秒見せたあと全画面の激アツ。終わるまでSTOPを受け付けない
     if(state.gisi === 5) state.lockUntil += GISI5_HOLD;
     if(state.introDelay) state.lockUntil = Math.max(state.lockUntil, performance.now() + state.introDelay + 300);
+    if(state.srGame && state.sr.type === 'break' && !state.sr.d.done){
+      state.lockUntil = Infinity;
+      const sr = state.sr;
+      breakFx.start(sr.success, () => { sr.d.done = true; screen.srStep(sr); state.lockUntil = performance.now() + 200; setTimeout(updateUI, 220); });
+    }
     if(state.srGame && state.sr.type === 'icon' && state.sr.d.picked < 0){
       state.lockUntil = Infinity;
       setTimeout(() => { if(state.sr && state.sr.type === 'icon' && state.sr.d.picked < 0) srIconPick(Math.floor(Math.random()*3)); }, autoOn ? 2000 : 9000);
@@ -4337,7 +4564,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610041736';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610101432';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -4413,7 +4640,7 @@
     if(state.diffLog.length > 600) state.diffLog = state.diffLog.filter((_, i) => i % 2 === 0);   // 長くなったら間引く
   }
   function renderData(){
-    if(!$('dataBox').open) return;
+    if(!$('dataBox') || !$('dataBox').open) return;   // データ表示は非表示中
     $('dGames').textContent = state.games;
     $('dBigs').textContent = state.bigs || 0;
     $('dRate').textContent = state.bigs ? `1/${(state.games / state.bigs).toFixed(1)}` : '-';
@@ -4431,7 +4658,7 @@
       c.stroke();
     }
   }
-  $('dataBox').addEventListener('toggle', renderData);
+  if($('dataBox')) $('dataBox').addEventListener('toggle', renderData);
   setInterval(renderData, 1000);
 
   // ステージ切り替えボタン：押すたびに 1→2→3→4→1 と切り替え（強制移行までのゲーム数も数え直す）
@@ -4475,6 +4702,8 @@
     if(!wantVideo && videoWanted){ try { ATV.currentTime = 0; } catch(e){} }   // 終わったら頭出ししておく
     videoWanted = wantVideo;
     $('skipBtn').hidden = !state.at;
+    // 店員アシスト：押せるときだけ明るく
+    $('staffBtn').disabled = state.phase === 'spinning' || !state.peka || state.assist || performance.now() < (state.lockUntil || 0) || !$('bigwin').hidden;
   }, 200);
 
   // ================================================================

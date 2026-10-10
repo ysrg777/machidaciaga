@@ -43,7 +43,8 @@ body{margin:0;min-height:100%;color:var(--ink);font-family:var(--sans);
 .topper.party .bulb{animation-duration:.2s}
 .topper.party .bulbs{animation:hue 1s linear infinite}
 @keyframes hue{to{filter:hue-rotate(360deg)}}
-.shooting{position:absolute;right:16px;bottom:12px;width:68px;height:32px;pointer-events:none}
+.subrow{position:relative}
+.shooting{position:absolute;right:-6px;top:-8px;width:68px;height:32px;pointer-events:none}
 .shooting .tail path{stroke:rgba(0,0,0,.35);stroke-linecap:round;fill:none}
 .shooting .star{fill:rgba(0,0,0,.4);stroke:rgba(0,0,0,.45);stroke-width:1.5;stroke-linejoin:round}
 .shooting.lit .tail path{stroke:url(#tail)}
@@ -197,6 +198,48 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 .freeze.dim{background:rgba(0,0,0,.45);transition:background-color .8s}
 .freeze.lamp{pointer-events:auto}
 .freeze.flash{background:#fff;transition:background-color .06s}
+/* 連打演出「OVER THE LIMIT!!」 */
+.break{position:fixed;inset:0;z-index:45;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 7vh);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.break[hidden]{display:none}
+#breakCv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.br-head{position:absolute;top:calc(env(safe-area-inset-top,0px) + 5vh);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+.br-title{text-align:center;font:900 clamp(2rem,11vw,4rem) "Titan One","M PLUS 1p",Impact,sans-serif;color:#fff;transform:skewX(-10deg);
+  text-shadow:3px 3px 0 #c00018,-2px -2px 0 #00e0ff,0 0 24px rgba(255,40,60,.9);animation:brGlitch .25s steps(2) infinite;opacity:0}
+.break.ready .br-title{opacity:1;animation:brDrop .45s cubic-bezier(.3,1.6,.5,1) both, brGlitch .25s .45s steps(2) infinite}
+@keyframes brGlitch{50%{transform:skewX(-10deg) translateX(2px)}}
+@keyframes brDrop{from{opacity:0;transform:skewX(-10deg) translateY(-60px) scale(1.6)}to{opacity:1;transform:skewX(-10deg)}}
+/* 残り時間：カウントダウン（日本語タイトルの上） */
+.br-count{font:clamp(2.2rem,12vw,3.6rem)/1 DotGothic16,monospace;color:#FFE14D;letter-spacing:.04em;opacity:0;transition:opacity .3s;
+  text-shadow:0 0 10px rgba(255,180,40,.9),3px 3px 0 #6a2000}
+.break.ready .br-count{opacity:1}
+.break.done .br-count{opacity:0}
+.br-count.hurry{color:#FF3B3B;text-shadow:0 0 14px rgba(255,40,40,1),3px 3px 0 #4a0000;animation:brHurry .5s ease-in-out infinite alternate}
+.br-count.tick{animation:brTick .25s ease-out}
+@keyframes brHurry{to{transform:scale(1.15)}}
+@keyframes brTick{from{transform:scale(1.3)}}
+/* 日本語タイトル：最初は画面中央に大きく → 見出しの位置へ */
+.br-ja{font:900 clamp(1.4rem,6.5vw,2.2rem) "M PLUS 1p",sans-serif;color:#FFF27A;text-shadow:0 0 12px #ff2a2a,3px 3px 0 #6a0000;white-space:nowrap;
+  transform:translateY(32vh) scale(1.5);transition:transform .5s cubic-bezier(.5,0,.3,1);animation:brSlam .35s cubic-bezier(.3,1.6,.5,1)}
+.break.ready .br-ja{transform:none;animation:none}
+@keyframes brSlam{from{opacity:0;transform:translateY(32vh) scale(3)}to{opacity:1;transform:translateY(32vh) scale(1.5)}}
+/* パトランプの上の矢印 */
+.br-arrow{display:flex;align-items:center;gap:10px;font:900 clamp(1.8rem,9vw,2.8rem) sans-serif;color:#fff;opacity:0;
+  text-shadow:0 0 12px #ff2a2a;animation:brArrow .45s ease-in-out infinite alternate}
+.br-arrow span{font:900 clamp(1rem,5vw,1.5rem) "M PLUS 1p",sans-serif;color:#FFF27A}
+.break.tapping .br-arrow{opacity:1}
+@keyframes brArrow{to{transform:translateY(10px)}}
+.br-msg{position:relative;font:900 clamp(1.1rem,5.5vw,1.7rem) "M PLUS 1p",sans-serif;color:#FFF27A;text-shadow:0 0 10px #ff2a2a,2px 2px 0 #5a0000;min-height:1.4em}
+.br-lamp{position:relative;width:min(44vw,190px);aspect-ratio:1;border:0;border-radius:50%;background:radial-gradient(circle,rgba(255,60,60,.45),rgba(255,60,60,0) 70%);
+  font-size:min(34vw,150px);line-height:1;cursor:pointer;filter:drop-shadow(0 0 24px rgba(255,40,40,.9));animation:brPulse .35s ease-in-out infinite alternate}
+.br-lamp:active,.br-lamp.hit{transform:scale(.88)}
+.br-lamp.hit{animation:brHit .12s ease-out}
+@keyframes brHit{from{transform:scale(.82)}to{transform:scale(1)}}
+.br-lamp:disabled{opacity:.5;animation:none}
+@keyframes brPulse{to{transform:scale(1.07)}}
+.br-bar{position:relative;width:min(70vw,320px);height:12px;border-radius:6px;background:rgba(255,255,255,.2);overflow:hidden;border:1px solid rgba(255,255,255,.5)}
+.br-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fd3ff,#fff,#ff4f8b);transition:width .12s}
+@media (prefers-reduced-motion:reduce){.br-title,.br-lamp{animation:none}}
 /* リールのガタガタ */
 .window.rattle{animation:rattle .07s linear infinite}
 @keyframes rattle{0%{transform:translate(0,0)}25%{transform:translate(-3px,2px) rotate(-.4deg)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-3px) rotate(.4deg)}100%{transform:translate(2px,3px)}}
@@ -238,6 +281,19 @@ summary{cursor:pointer;font-weight:800;padding:6px 0}
 .data-grid b{font:1.05rem DotGothic16,monospace;color:#FF8A6A}
 #dGraph{width:100%;height:80px;background:#140308;border-radius:8px}
 .data-hist{margin:8px 0 0;padding-left:1.4em;line-height:1.7}
+/* クレジット・払い出し・ゲーム数（液晶の上に小さく） */
+.lcds.mini{gap:6px;margin:10px 0 0}
+.lcds.mini .lcd{display:flex;align-items:baseline;justify-content:space-between;gap:4px;padding:2px 7px;border-width:1px;border-radius:6px}
+.lcds.mini .lcd span{display:inline;font-size:.55rem;white-space:nowrap}
+.lcds.mini .lcd b{font-size:1rem}
+/* メッセージ（タイトルパネルの中） */
+.topper .msg{min-height:1.9em;margin:12px 0 0;padding:3px 10px;font-size:.82rem;background:rgba(0,0,0,.55);border-color:rgba(242,193,78,.45);border-radius:999px}
+.topper .msg.alert{color:#fff;background:linear-gradient(90deg,rgba(200,0,40,.75),rgba(255,120,0,.75),rgba(200,0,40,.75));border-color:#FFE14D;
+  text-shadow:0 0 6px #ff2a2a;animation:msgAlert .5s ease-in-out infinite alternate}
+@keyframes msgAlert{to{box-shadow:0 0 14px rgba(255,225,77,.9)}}
+@media (prefers-reduced-motion:reduce){.topper .msg.alert{animation:none}}
+/* 店員アシスト：押せないときは暗く */
+.staff:disabled{filter:brightness(.45) saturate(.35);animation:none;box-shadow:none;cursor:default}
 /* メダルのチャージ案内 */
 .charge{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);z-index:58;
   width:min(92vw,360px);padding:14px 16px 12px;border-radius:18px;text-align:center;

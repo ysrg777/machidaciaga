@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610041736">
+<link rel="stylesheet" href="css/style.css?ver=202610101432">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -21,7 +21,8 @@
   <header class="topper" id="topper">
     <div class="bulbs" id="bulbs" aria-hidden="true"></div>
     <h1 class="title">MACHIDACIAGA</h1>
-    <p class="sub">マチダシアガ</p>
+    <div class="subrow">
+      <p class="sub">マチダシアガ</p>
     <!-- 流れ星：通常は薄い黒で消灯、大当たり確定で虹色に点灯 -->
     <svg class="shooting" id="shooting" viewBox="0 0 120 56" aria-label="流れ星 消灯" role="img">
       <defs>
@@ -40,8 +41,15 @@
       </g>
       <path class="star" d="M92 6l5.4 11.6 12.6 1.5-9.3 8.7 2.4 12.5L92 34.1l-11.1 6.2 2.4-12.5-9.3-8.7 12.6-1.5z"/>
     </svg>
+    </div>
+    <div class="msg" id="msg" aria-live="polite">制御テーブルを準備中…</div>
   </header>
 
+  <div class="lcds mini">
+    <div class="lcd"><span>クレジット</span><b id="credit">0</b></div>
+    <div class="lcd"><span>払い出し</span><b id="payout">0</b></div>
+    <div class="lcd"><span>ゲーム数</span><b id="games">0</b></div>
+  </div>
   <div class="screenbox"><canvas id="screen" aria-label="演出用の液晶画面"></canvas><button class="lcdskip" id="skipBtn" hidden>SKIP ▶▶</button></div>
 
   <div class="bezel">
@@ -60,26 +68,7 @@
     <button class="stop" data-i="2" aria-label="右リールを止める">STOP</button>
   </div>
 
-  <div class="lcds">
-    <div class="lcd"><span>クレジット</span><b id="credit">0</b></div>
-    <div class="lcd"><span>払い出し</span><b id="payout">0</b></div>
-    <div class="lcd"><span>ゲーム数</span><b id="games">0</b></div>
-  </div>
-  <div class="msg" id="msg" aria-live="polite">制御テーブルを準備中…</div>
 
-  <details class="data" id="dataBox">
-    <summary>データ</summary>
-    <div class="data-grid">
-      <div><span>総ゲーム数</span><b id="dGames">0</b></div>
-      <div><span>ボーナス</span><b id="dBigs">0</b></div>
-      <div><span>合成確率</span><b id="dRate">-</b></div>
-      <div><span>天井まで</span><b id="dCeil">-</b></div>
-      <div><span>差枚</span><b id="dDiff">0</b></div>
-      <div><span>ストック</span><b id="dStock">0</b></div>
-    </div>
-    <canvas id="dGraph" width="600" height="160" aria-label="差枚グラフ"></canvas>
-    <ol class="data-hist" id="dHist"></ol>
-  </details>
   <div class="ctrl">
     <button class="auto" id="autoBtn" aria-pressed="false">AUTO</button>
     <button class="staff" id="staffBtn" hidden>🙋 店員アシスト</button>
@@ -124,7 +113,7 @@
       <label>フリーズ<select id="fFreeze">
         <option value="auto">自動</option><option value="on">発生</option></select></label>
       <label>特殊リーチ<select id="fSr">
-        <option value="auto">自動</option><option value="on">発生（種類は自動）</option><option value="icon">アイコン詐欺</option><option value="audition">リスナーオーディション</option><option value="carriage">かぼちゃの馬車</option><option value="family">ファミリー集結</option><option value="house">コウジ、家を買う</option><option value="hashiguchi">なんだ橋口か</option></select></label>
+        <option value="auto">自動</option><option value="on">発生（種類は自動）</option><option value="icon">アイコン詐欺</option><option value="audition">リスナーオーディション</option><option value="carriage">かぼちゃの馬車</option><option value="family">ファミリー集結</option><option value="house">コウジ、家を買う</option><option value="hashiguchi">なんだ橋口か</option><option value="break">OVER THE LIMIT!!（連打）</option></select></label>
       <label>特殊リーチの結果<select id="fSrWin">
         <option value="auto">自動</option><option value="win">成功</option><option value="lose">失敗</option></select></label>
       <label>告知ルート（7・BAR当選時）<select id="fRoute">
@@ -139,8 +128,8 @@
 
   <div class="opts">
     <label>設定<select id="setting">
-      <option value="1">設定1（80%）</option><option value="2">設定2（90%）</option><option value="3">設定3（105%）</option>
-      <option value="4">設定4（120%）</option><option value="5">設定5（150%）</option><option value="6">設定6（200%）</option>
+      <option value="1">設定1（96%）</option><option value="2">設定2（99%）</option><option value="3">設定3（104%）</option>
+      <option value="4">設定4（111%）</option><option value="5">設定5（124%）</option><option value="6">設定6（150%）</option>
     </select></label>
     <label>動画<select id="videoQ">
       <option value="sd">標準</option><option value="hd">高画質</option>
@@ -166,13 +155,13 @@
   <table id="paytable"></table>
   <p class="note">レバーを押した瞬間に役が抽選され（内部抽選）、リールはその結果に従って最大4コマ滑って止まります。当選役は揃えに行き、当選していない役は絶対に揃えません。</p>
   <p class="note">3枚掛け・3ライン（上段・中段・下段）固定。リール配列はジャグラーの配列をもとにしています（ピエロの位置はスイカ）。ぶどうとリプレイはどの押し順・タイミングでも必ず揃います。チェリー・ベル・スイカ・7・BARは狙って押す必要があります。</p>
-  <p class="note">設定1〜6で7・BARの確率が変わり、理論出玉率は80%〜200%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
+  <p class="note">設定1〜6で7・BARの確率が変わり、理論出玉率は96%〜150%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
   <p class="note">小役のアツさ：小役に当選すると、さらに7・BARの抽選が行われます（リプレイ0.1%・ぶどう0.5%・ベル1%・スイカ5%・角チェリー10%・中段チェリー50%）。当選したらランプが光り、次のゲームで狙います。</p>
   <p class="note">チャンスステージ：小役で7・BARの抽選に外れたとき、リプレイ1%・ぶどう1%・ベル5%・スイカ10%・チェリー30%で移行。初回20ゲームで、7・BARの確率が4倍。残り5ゲームから継続ジャッジの煽りが入り、50%で20ゲーム継続（最大100ゲーム）。</p>
   <p class="note">通常ステージは4種類（配信部屋・ゲーム部屋・バーラウンジ・実家）。アツいときほどステージチェンジが起きやすく、7・BAR当選時はステージ3に移りやすくなります。キャラのポーズに合わせて炎・音符・泡などの演出が出ます。</p>
   <p class="note">バトルリーチ：5ゲームの連続演出。1ゲームごとに展開が進み、5ゲーム目の第3停止で決着。勝てば大当たり確定！ 種類は「通常バトル（拳銃を持った黒服）」「ラップバトル」「イベント出場（めざせ優勝）」「S6ライバー全員を倒せ」の4つで、後ろほど期待度が高め。バトル名の下の星が多いほどアツく、S6ライバー全員を倒せは虹色の星で大当たり確定。擬似連が続くとバトルに発展することも（発展しないこともあります）。途中でやられても逆転することも。</p>
   <p class="note">次回予告：ゲームの終わりに「次回配信のお知らせ」が出たら、次のゲームに注目。タイトル・サムネの色・出演者・日時・コメントの数でアツさが変わります（虹色・アルマンド・覚醒町田さんは確定）。タイトルの書き換え、シルエットの出演者、バトル予告、放送事故（プレミア）もあり。</p>
-  <p class="note">特殊リーチ：アイコン詐欺（タップして見破れ）、リスナーオーディション（日跨ぎスタメン全員「いけます！」で大当たり）、かぼちゃの馬車に乗り込め（5ゲーム以内）、ファミリー集結（20人でバトル発展）、コウジ、家を買う（審査通過でチャンス）、誰かが配信に遊びに来た！（ゲボリスナーが2人続いたあと、3人目が橋口ならバトル発展）。</p>
+  <p class="note">特殊リーチ：アイコン詐欺（タップして見破れ）、リスナーオーディション（日跨ぎスタメン全員「いけます！」で大当たり）、かぼちゃの馬車に乗り込め（5ゲーム以内）、ファミリー集結（20人でバトル発展）、コウジ、家を買う（審査通過でチャンス）、誰かが配信に遊びに来た！（ゲボリスナーが2人続いたあと、3人目が橋口ならバトル発展）、OVER THE LIMIT!!（パトランプを連打して画面のガラスを割ればチャンス）。</p>
   <p class="note">7・BARに当選しても、すぐに教えるとは限りません。多くは「前兆」（画面が紫に染まりコメントがざわつく）→ カットインや擬似連で煽り → バトルや特殊リーチの決着で告知されます。チャンスステージ中に「昇格」してバトルになることも。</p>
   <p class="note">ボーナス中はチェリーで上乗せ、特化ゾーン「ギター覚醒タイム」なら毎ゲーム上乗せ。ボーナス後10ゲームは引き戻しチャンス（当たりやすい）。通常時666ゲームで天井（S6ライバー戦で救済）。終了画面の店長のひとことは設定示唆かも…？</p>
   <p class="note">フリーズ（プレミア）：レバーを押した瞬間にリールがガタガタ揺れて暗転したら…逆回転のあと、パトランプが降りてきます。押せば大当たり確定＆ボーナス100枚上乗せ！</p>
@@ -196,6 +185,17 @@
 <canvas id="gekiatsu" aria-hidden="true" hidden></canvas>
 <canvas id="bonusIn" aria-hidden="true" hidden></canvas>
 <canvas id="kakutei" aria-hidden="true" hidden></canvas>
+<div class="break" id="breakFx" hidden>
+  <canvas id="breakCv"></canvas>
+  <div class="br-head">
+    <div class="br-title" id="breakEn">OVER THE LIMIT!!</div>
+    <div class="br-count" id="breakCount" aria-live="off">6.00</div>
+    <div class="br-ja" id="breakJa">画面を割れ！！</div>
+  </div>
+  <div class="br-msg" id="breakMsg"></div>
+  <div class="br-arrow" aria-hidden="true">⬇<span>連打!!</span>⬇</div>
+  <button class="br-lamp" id="breakLamp" aria-label="パトランプを連打">🚨</button>
+</div>
 <div class="freeze" id="freezeFx" hidden>
   <button class="patlamp" id="patlamp" aria-label="パトランプを押す" hidden><span class="pl-beam"></span><span class="pl-emoji">🚨</span></button>
   <div class="pl-text" id="plText" hidden>パトランプを押せ!!</div>
@@ -225,6 +225,6 @@
   <div class="bw-amount" id="bwAmount">+0</div>
 </div>
 
-<script src="js/main.js?ver=202610041736"></script>
+<script src="js/main.js?ver=202610101432"></script>
 </body>
 </html>
