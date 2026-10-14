@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MACHIDACIAGA（マチダシアガ）</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610101432">
+<link rel="stylesheet" href="css/style.css?ver=202610150259">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -129,7 +130,7 @@
   <div class="opts">
     <label>設定<select id="setting">
       <option value="1">設定1（96%）</option><option value="2">設定2（99%）</option><option value="3">設定3（104%）</option>
-      <option value="4">設定4（111%）</option><option value="5">設定5（124%）</option><option value="6">設定6（150%）</option>
+      <option value="4">設定4（111%）</option><option value="5">設定5（124%）</option><option value="6">設定6（150%）</option><option value="7">設定7（200%）</option>
     </select></label>
     <label>動画<select id="videoQ">
       <option value="sd">標準</option><option value="hd">高画質</option>
@@ -155,7 +156,7 @@
   <table id="paytable"></table>
   <p class="note">レバーを押した瞬間に役が抽選され（内部抽選）、リールはその結果に従って最大4コマ滑って止まります。当選役は揃えに行き、当選していない役は絶対に揃えません。</p>
   <p class="note">3枚掛け・3ライン（上段・中段・下段）固定。リール配列はジャグラーの配列をもとにしています（ピエロの位置はスイカ）。ぶどうとリプレイはどの押し順・タイミングでも必ず揃います。チェリー・ベル・スイカ・7・BARは狙って押す必要があります。</p>
-  <p class="note">設定1〜6で7・BARの確率が変わり、理論出玉率は96%〜150%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
+  <p class="note">設定1〜7で7・BARの確率が変わり、理論出玉率は96%〜200%です（ランプ点灯後に7・BARを揃え、ATを消化した場合）。AT中は「ATをスキップ」で残りを一瞬で消化できます。</p>
   <p class="note">小役のアツさ：小役に当選すると、さらに7・BARの抽選が行われます（リプレイ0.1%・ぶどう0.5%・ベル1%・スイカ5%・角チェリー10%・中段チェリー50%）。当選したらランプが光り、次のゲームで狙います。</p>
   <p class="note">チャンスステージ：小役で7・BARの抽選に外れたとき、リプレイ1%・ぶどう1%・ベル5%・スイカ10%・チェリー30%で移行。初回20ゲームで、7・BARの確率が4倍。残り5ゲームから継続ジャッジの煽りが入り、50%で20ゲーム継続（最大100ゲーム）。</p>
   <p class="note">通常ステージは4種類（配信部屋・ゲーム部屋・バーラウンジ・実家）。アツいときほどステージチェンジが起きやすく、7・BAR当選時はステージ3に移りやすくなります。キャラのポーズに合わせて炎・音符・泡などの演出が出ます。</p>
@@ -225,6 +226,6 @@
   <div class="bw-amount" id="bwAmount">+0</div>
 </div>
 
-<script src="js/main.js?ver=202610101432"></script>
+<script src="js/main.js?ver=202610150259"></script>
 </body>
 </html>
