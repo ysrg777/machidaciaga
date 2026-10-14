@@ -44,14 +44,14 @@
   ];
   // 設定1〜7：7とBARの確率（65536分率）を変えて出玉率を調整。
   // 出玉率は「ランプ点灯後に7・BARを揃え、ATを消化した場合」のシミュレーション値（チャンスステージ・引き戻し・天井込み）
-  const SETTINGS = {
-    1:{S7:83,  BAR:166,  rtp:96},
-    2:{S7:96,  BAR:192,  rtp:99},
-    3:{S7:125, BAR:250,  rtp:104},
-    4:{S7:168, BAR:336,  rtp:111},
-    5:{S7:274, BAR:548,  rtp:124},
-    6:{S7:567, BAR:1134, rtp:150},
-    7:{S7:2403, BAR:4806, rtp:200}   // 特別設定
+  const SETTINGS = {   // 7：BAR ＝ 2：1（7を多めに）
+    1:{S7:84,   BAR:42,   rtp:96},
+    2:{S7:102,  BAR:51,   rtp:99},
+    3:{S7:132,  BAR:66,   rtp:103},
+    4:{S7:192,  BAR:96,   rtp:110},
+    5:{S7:328,  BAR:164,  rtp:123},
+    6:{S7:740,  BAR:370,  rtp:150},
+    7:{S7:3282, BAR:1641, rtp:200}   // 特別設定
   };
   // 小役の「アツさ」：小役に当選したとき、さらに7・BARの抽選を行う（重複当選）
   const DUP = {RPL:.001, GRP:.005, WML:.05, BEL:.01, CHE:.10, CHEM:.50};
@@ -64,6 +64,7 @@
     const tot = S7 + BAR; if(tot > CZ_CAP){ S7 *= CZ_CAP/tot; BAR *= CZ_CAP/tot; }
     return TABLE.map(([k,w]) => [k, k === 'S7' ? Math.round(S7) : k === 'BAR' ? Math.round(BAR) : w]);
   }
+  const S7_SHARE = () => { const st = SETTINGS[state.setting] || SETTINGS[6]; return st.S7/(st.S7 + st.BAR); };   // 7とBARのうち7の割合
   function applySetting(n){
     TABLE.find(t => t[0] === 'S7')[1] = SETTINGS[n].S7;
     TABLE.find(t => t[0] === 'BAR')[1] = SETTINGS[n].BAR;
@@ -308,15 +309,15 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610150259', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610150259', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610150259', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610150259', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610150259', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610150259', 'sevenAlignBuf');
-        load('assets/sound/bonusin_snd.mp3?ver=202610150259', 'bonusinBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610150259', 'bonusBuf'), 300);
-        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610150259', 'barBgmBuf'), 400);
+        load('assets/sound/ooi.mp3?ver=202610150356', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610150356', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610150356', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610150356', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610150356', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610150356', 'sevenAlignBuf');
+        load('assets/sound/bonusin_snd.mp3?ver=202610150356', 'bonusinBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610150356', 'bonusBuf'), 300);
+        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610150356', 'barBgmBuf'), 400);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -880,50 +881,50 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610150259';
+  HERO.src = 'assets/img/haishin.webp?ver=202610150356';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610150259';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610150356';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610150259';
+  OJII.src = 'assets/img/ojii.webp?ver=202610150356';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610150259';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610150356';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610150259';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610150356';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610150259';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610150356';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610150259';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610150356';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610150259';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610150356';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610150259';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610150356';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610150259';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610150356';
   // 777ボーナス中の液晶背景：ループ動画（640×320・約40秒・無音。曲はボーナスBGMのまま）
   const ATV = document.createElement('video');
   ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
-  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610150259';
-  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610150259';
-  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610150259';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610150356';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610150356';
+  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610150356';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
   const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
   // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒）。音声は別の音源で動画と同時に鳴らす
   const BV = document.createElement('video');
   BV.muted = true; BV.playsInline = true; BV.setAttribute('playsinline', ''); BV.setAttribute('muted', ''); BV.preload = 'auto';
-  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610150259';
-  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610150259';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
-  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610150259';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
+  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610150356';
+  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610150356';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
+  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610150356';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
   // 動画の画質：標準／高画質（設定欄で切り替え）。H.264が使えないブラウザはWebM（標準画質）
   const videoQ = () => { try { return JSON.parse(localStorage.getItem('slot.vq')) || 'sd'; } catch(e){ return 'sd'; } };
   const canMp4 = BV.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '';
@@ -939,12 +940,12 @@
   const bvReady = () => BV.readyState >= 2 && BV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610150259';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610150356';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610150259';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610150356';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610150259';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610150356';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -2335,7 +2336,7 @@
 
     // --- 3Dキャラ（町田さん・コウジ・ハゲ彼氏・シロヤナギくん）---
     // three.js で別のキャンバスに描いて液晶に貼る。読み込みが終わるまで（またはネットにつながらないとき）は今までの2Dの絵で代用
-    const M3D_SRC = {machida:'assets/model/machida.glb?ver=202610150259', koji:'assets/model/koji.glb?ver=202610150259', hage:'assets/model/hage.glb?ver=202610150259', shiro:'assets/model/shiro.glb?ver=202610150259', live:'assets/model/live.glb?ver=202610150259'};   // プレビュー用：base64文字列のファイル（公開版はGLBファイルに差し替え）
+    const M3D_SRC = {machida:'assets/model/machida.glb?ver=202610150356', koji:'assets/model/koji.glb?ver=202610150356', hage:'assets/model/hage.glb?ver=202610150356', shiro:'assets/model/shiro.glb?ver=202610150356', live:'assets/model/live.glb?ver=202610150356'};   // プレビュー用：base64文字列のファイル（公開版はGLBファイルに差し替え）
     const M3D = {st:'none', models:{}, loading:{}};
     function m3dInit(){
       if(M3D.st !== 'none') return; M3D.st = 'loading';
@@ -2353,7 +2354,10 @@
         const px = Math.min(640, Math.ceil(170*Math.max(2, scale)));
         M3D.sq = mk(px, px, 1); M3D.sq.cam.position.set(0, .55, 2.35); M3D.sq.cam.lookAt(0, .5, 0);
         const ww = Math.min(1100, Math.ceil(W*Math.max(2, scale)));
-        M3D.wide = mk(ww, Math.round(ww/2), 2); M3D.wide.cam.position.set(.2, .64, 3.0); M3D.wide.cam.lookAt(.2, .64, 0);
+        M3D.wide = mk(ww, Math.round(ww/2), 2);
+        // ボーナスステージは背景が明るいので、キャラを明るめに（正面からの光と全体の光を足す）
+        { const amb = new THREE.AmbientLight(0xffffff, .9); M3D.wide.sc.add(amb);
+          const front = new THREE.DirectionalLight(0xfff4ec, 1.6); front.position.set(0, 1.2, 4); M3D.wide.sc.add(front); } M3D.wide.cam.position.set(.2, .64, 3.0); M3D.wide.cam.lookAt(.2, .64, 0);
         M3D.loader = new GLTFLoader(); M3D.loader.setMeshoptDecoder(MeshoptDecoder);
         M3D.THREE = THREE; M3D.st = 'ready';
       }).catch(e => { M3D.st = 'error'; console.warn('three.js を読み込めませんでした', e); });
@@ -2493,7 +2497,7 @@
     }
 
     // ---- ボーナス（777）：ステージの背景に、町田さんがセンターで歌って踊り、みんながバックで踊る ----
-    const STAGE777 = new Image(); STAGE777.src = 'assets/img/stage777.webp?ver=202610150259';
+    const STAGE777 = new Image(); STAGE777.src = 'assets/img/stage777.webp?ver=202610150356';
     // 777ボーナス（動画版）：画面の右側に、ちびキャラが1人ずつ交代で出てきて踊る
     const GUESTS = ['koji', 'shiro', 'hage', 'ojii'], GUEST_STAY = 8000;
     const GUEST_ANIM = {koji:['dance_05', 'swagger'], shiro:['dance_05', 'swagger'], hage:['clap', 'dance_05', 'cheer']};
@@ -3511,8 +3515,16 @@
   const flagName = f => f ? (OJ_NAME[f] || SYM[f].name) : 'ハズレ';
   function setMsg(t){
     msgEl.textContent = t;
+    // 1行に収まらない長さのときは文字を小さくする（2段になって高さが変わらないように）
+    msgEl.style.fontSize = '';
+    if(t && msgEl.scrollWidth > msgEl.clientWidth){
+      const base = parseFloat(getComputedStyle(msgEl).fontSize), k = Math.max(.62, (msgEl.clientWidth - 20) / (msgEl.scrollWidth - 20));
+      msgEl.style.fontSize = (base * k).toFixed(1) + 'px';
+    }
     msgEl.classList.toggle('alert', /狙え|ボーナス！|確定|点灯/.test(t));   // 大事なお知らせは目立たせる
   }
+  // 文字のフォントが後から読み込まれて幅が変わったときも、1行に収め直す
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setMsg(msgEl.textContent)).catch(() => {});
   function updateUI(){
     if(typeof checkMilestones === 'function') checkMilestones();
     $('credit').textContent = state.credits;
@@ -3855,7 +3867,7 @@
     }
     if(t === 'hashiguchi'){ sr.len = 3; sr.outcome = success ? 'battle' : 'none'; }
     if(t === 'break'){ sr.d.done = false; sr.outcome = success ? (bigKey || Math.random() < .5 ? 'battle' : 'cz') : 'none'; }
-    if(sr.outcome === 'big' && !sr.big) sr.big = Math.random() < 1/3 ? 'S7' : 'BAR';   // デバッグで成功させたとき用
+    if(sr.outcome === 'big' && !sr.big) sr.big = Math.random() < S7_SHARE() ? 'S7' : 'BAR';   // デバッグで成功させたとき用
     return sr;
   }
   // アイコン詐欺：タップしたアイコンの正体を明かす
@@ -4152,7 +4164,7 @@
     if(routeOK && !state.zencho){
       const forced = dbg.battle || dbg.sr || dbg.freeze === 'on';
       if((state.sinceBig || 0) >= CEILING && !forced){   // 天井
-        state.flag = Math.random() < 1/3 ? 'S7' : 'BAR'; state.dupBig = null; hot = state.flag; state.ceilingHit = true;
+        state.flag = Math.random() < S7_SHARE() ? 'S7' : 'BAR'; state.dupBig = null; hot = state.flag; state.ceilingHit = true;
       }
       if(isBig(hot) && !forced){
         const key = state.dupBig || state.flag;
@@ -4242,7 +4254,7 @@
           // 勝ちバトルの2割は、一度やられてから逆転する
           state.battle = newBattle(win, forced === 'comeback' || (!!fb && win && Math.random() < .2), dbg.enemy || (fb && fb.type));   // dbg.enemy＝バトルの種類
           if(state.battle.type === 's6' || state.battle.win){ state.battle.win = true;
-            state.battle.big = (fb && fb.big) || (big ? (state.dupBig || state.flag) : (Math.random() < 1/3 ? 'S7' : 'BAR')); }
+            state.battle.big = (fb && fb.big) || (big ? (state.dupBig || state.flag) : (Math.random() < S7_SHARE() ? 'S7' : 'BAR')); }
           state.preGisi = pre;
           const intro = () => { if(state.battle && state.battle.game === 1){ screen.battleStart(state.battle, pre > 0 || fromSR); sfx.battleStart();
             setTimeout(() => { if(state.battle && state.battle.game === 1) battleTurn(0); }, 1900); } };
@@ -4560,10 +4572,11 @@
         if(state.peka && state.aimGame && BIG.includes(flag) && !hit){
           state.missCount++;
           const left = STAFF_MISS - state.missCount;
-          setMsg(`${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` + (left > 0 ? `（ミス${state.missCount}回）` : '　店員アシストが使えます'));
+          setMsg(`${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` + (left > 0 ? `（あと${left}回で店員アシスト）` : '　店員アシストが使えます'));
           if(state.assist){ state.assist = false; screen.setStaff(false); }
           if(left <= 0) showStaff(true);
-        } else setMsg(state.peka ? `${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` : 'はずれ。SPINでもう一回');
+        } else { const sl = STAFF_MISS - (state.missCount || 0);
+          setMsg(state.peka ? `${state.carry === 'S7' ? '777' : 'BAR・BAR・BAR'}を狙え！！` + (state.assist ? '' : sl > 0 ? `（あと${sl}回で店員アシスト）` : '　店員アシストが使えます') : 'はずれ。SPINでもう一回'); }
       } else if(state.replay){
         setMsg('リプレイ！次ゲームはベット不要'); sfx.replay();
       } else if(flag === 'WML'){
@@ -4655,9 +4668,34 @@
     autoOn = on;
     $('autoBtn').setAttribute('aria-pressed', String(on));
   }
-  const wakeAudio = () => { audio.init(); if(audio.ctx && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {}); };
-  document.addEventListener('pointerdown', wakeAudio);
-  document.addEventListener('keydown', wakeAudio);
+  // iPhone・iPad 対策：
+  //  ・音を鳴らす許可は「タッチを離したとき（touchend / click）」でないと下りない端末があるので、そこでも起こす
+  //  ・本体がマナーモード（消音）だと Web Audio が無音になるので、「メディア再生」扱いに切り替える
+  //    （新しいSafariは audioSession、古いSafariは無音の audio 要素を流して切り替える）
+  //  ・最初のタッチで無音を一瞬鳴らして、音の出口を確実に開けておく
+  let audioUnlocked = false, silentEl = null;
+  try { if(navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+  // 無音のWAV（中身0秒）をその場で作る
+  const SILENT_WAV = URL.createObjectURL(new Blob([new Uint8Array([82,73,70,70,36,0,0,0,87,65,86,69,102,109,116,32,16,0,0,0,1,0,1,0,64,31,0,0,64,31,0,0,1,0,8,0,100,97,116,97,0,0,0,0])], {type:'audio/wav'}));
+  const wakeAudio = () => {
+    audio.init();
+    const c = audio.ctx; if(!c) return;
+    if(c.state !== 'running') c.resume().catch(() => {});
+    if(audioUnlocked) return;
+    try {
+      const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource();
+      src.buffer = b; src.connect(c.destination); src.start(0);
+    } catch(e){}
+    if(!navigator.audioSession){
+      try {
+        silentEl = silentEl || Object.assign(document.createElement('audio'), {src: SILENT_WAV, loop: true});
+        silentEl.setAttribute('playsinline', ''); silentEl.setAttribute('x-webkit-airplay', 'deny');
+        silentEl.play().catch(() => {});
+      } catch(e){}
+    }
+    if(c.state === 'running') audioUnlocked = true;
+  };
+  ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, wakeAudio, {passive: true}));
   document.addEventListener('visibilitychange', () => { if(!document.hidden && audio.ctx && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {}); });
   $('autoBtn').addEventListener('click', () => { audio.init(); setAuto(!autoOn); if(autoOn) setMsg('オートプレイ中'); });
   setInterval(() => {
@@ -4816,7 +4854,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610150259';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610150356';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
@@ -4955,7 +4993,11 @@
     videoWanted = wantVideo;
     $('skipBtn').hidden = !state.at;
     // 店員アシスト：押せるときだけ明るく
-    $('staffBtn').disabled = state.phase === 'spinning' || !state.peka || state.assist || performance.now() < (state.lockUntil || 0) || !$('bigwin').hidden;
+    // 店員アシスト：ボタンは常に見えていて、使えるときだけ明るく押せる。確定中は「あと○回でアシスト」と表示
+    const staffLeft = Math.max(0, STAFF_MISS - (state.missCount || 0)), staffOK = !!state.staffOK || (state.peka && staffLeft === 0);
+    $('staffBtn').disabled = !staffOK || state.phase === 'spinning' || !state.peka || state.assist || performance.now() < (state.lockUntil || 0) || !$('bigwin').hidden;
+    const sub = state.assist ? '目押し中…' : !state.peka ? '' : staffOK ? '使えます！タップ' : `あと${staffLeft}回ミスで使える`;
+    if($('staffSub').textContent !== sub) $('staffSub').textContent = sub;
   }, 200);
 
   // ================================================================
@@ -4963,7 +5005,7 @@
   // 押すと店員さんが代わりに目押しして、1ゲームで揃えてくれる
   // ================================================================
   const STAFF_MISS = 5;
-  function showStaff(on){ $('staffBtn').hidden = !on; }
+  function showStaff(on){ state.staffOK = !!on; }   // ボタンは常に表示。使えるときだけ押せる
   $('staffBtn').addEventListener('click', () => {
     if(state.phase === 'spinning' || !state.peka || state.assist) return;
     audio.init();

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Titan+One&family=Limelight&family=M+PLUS+1p:wght@500;800&family=Rampart+One&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?ver=202610150259">
+<link rel="stylesheet" href="css/style.css?ver=202610150356">
 <script>
   // GitHub Pages（*.github.io）で公開している版では、配当表・仕組みと「内部を見る」を非公開にする。
   // URLに ?debug を付けたときだけ表示（画面が描かれる前に判定するので一瞬も見えない）
@@ -18,12 +18,42 @@
 <style>.public #howto,.public #dbgBtn,.public #debug{display:none!important}</style>
 </head>
 <body>
+<!-- 読み込み中の画面（ページ本体より先に表示して、真っ白の時間をなくす） -->
+<div id="boot" role="status" aria-live="polite" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#14061f radial-gradient(ellipse at 50% 0%,#5a1a6e,#14061f 70%);color:#fff;font-family:system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;transition:opacity .45s">
+  <style>
+    #boot .bt{font-weight:900;font-size:clamp(26px,9vw,40px);letter-spacing:.08em;background:linear-gradient(90deg,#ff4f8b,#ffd23a,#5dff8a,#4fc3ff,#b26bff,#ff4f8b);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:btHue 2.4s linear infinite}
+    #boot .btr{display:flex;gap:8px}
+    #boot .btc{width:46px;height:58px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 3px #f2c14e,0 4px 14px rgba(0,0,0,.4);overflow:hidden;position:relative}
+    #boot .btc span{position:absolute;left:0;right:0;text-align:center;font-weight:900;font-size:30px;line-height:58px;color:#e0102a;animation:btSpin .5s linear infinite}
+    #boot .btc:nth-child(2) span{animation-duration:.42s;color:#2a7cff}
+    #boot .btc:nth-child(3) span{animation-duration:.36s;color:#e0102a}
+    #boot .btm{font-size:13px;letter-spacing:.2em;opacity:.85}
+    #boot .btb{width:min(240px,64vw);height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+    #boot .btb i{display:block;height:100%;width:40%;border-radius:3px;background:linear-gradient(90deg,#ff4f8b,#ffd23a);animation:btBar 1.2s ease-in-out infinite}
+    @keyframes btHue{to{background-position:-200% 0}}
+    @keyframes btSpin{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+    @keyframes btBar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+    @media (prefers-reduced-motion:reduce){#boot *{animation:none!important}}
+  </style>
+  <div class="bt">MACHIDACIAGA</div>
+  <div class="btr" aria-hidden="true"><div class="btc"><span>7</span></div><div class="btc"><span>7</span></div><div class="btc"><span>7</span></div></div>
+  <div class="btb" aria-hidden="true"><i></i></div>
+  <div class="btm">NOW LOADING…</div>
+  <script>
+    (function(){
+      var b = document.getElementById('boot'), done = false;
+      function hide(){ if(done) return; done = true; b.style.opacity = '0'; b.style.pointerEvents = 'none'; setTimeout(function(){ b.remove(); }, 500); }
+      // 画像などを読み込み終えたら消す（回線が遅くても12秒で消す）
+      if(document.readyState === 'complete') setTimeout(hide, 0); else addEventListener('load', function(){ setTimeout(hide, 150); });
+      setTimeout(hide, 12000);
+    })();
+  </script>
+</div>
 <div class="cab" id="cab">
   <header class="topper" id="topper">
     <div class="bulbs" id="bulbs" aria-hidden="true"></div>
     <h1 class="title">MACHIDACIAGA</h1>
     <div class="subrow">
-      <p class="sub">マチダシアガ</p>
     <!-- 流れ星：通常は薄い黒で消灯、大当たり確定で虹色に点灯 -->
     <svg class="shooting" id="shooting" viewBox="0 0 120 56" aria-label="流れ星 消灯" role="img">
       <defs>
@@ -72,7 +102,7 @@
 
   <div class="ctrl">
     <button class="auto" id="autoBtn" aria-pressed="false">AUTO</button>
-    <button class="staff" id="staffBtn" hidden>🙋 店員アシスト</button>
+    <button class="staff" id="staffBtn" disabled><span class="st1">🙋 店員アシスト</span><span class="st2" id="staffSub"></span></button>
     <button class="spin" id="lever" disabled>SPIN</button>
   </div>
 
@@ -129,8 +159,8 @@
 
   <div class="opts">
     <label>設定<select id="setting">
-      <option value="1">設定1（96%）</option><option value="2">設定2（99%）</option><option value="3">設定3（104%）</option>
-      <option value="4">設定4（111%）</option><option value="5">設定5（124%）</option><option value="6">設定6（150%）</option><option value="7">設定7（200%）</option>
+      <option value="1">設定1（96%）</option><option value="2">設定2（99%）</option><option value="3">設定3（103%）</option>
+      <option value="4">設定4（110%）</option><option value="5">設定5（123%）</option><option value="6">設定6（150%）</option><option value="7">設定7（200%）</option>
     </select></label>
     <label>動画<select id="videoQ">
       <option value="sd">標準</option><option value="hd">高画質</option>
@@ -226,6 +256,6 @@
   <div class="bw-amount" id="bwAmount">+0</div>
 </div>
 
-<script src="js/main.js?ver=202610150259"></script>
+<script src="js/main.js?ver=202610150356"></script>
 </body>
 </html>
