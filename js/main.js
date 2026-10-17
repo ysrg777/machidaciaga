@@ -309,15 +309,15 @@
         // 効果音・BGMの音源を読み込んでおく（assets/sound）
         const load = (url, key) => fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
           .then(b => { this[key] = b; }).catch(() => {});
-        load('assets/sound/ooi.mp3?ver=202610150356', 'ooiBuf');
-        load('assets/sound/aishiteru.mp3?ver=202610150356', 'aiBuf');
-        load('assets/sound/pokyun.mp3?ver=202610150356', 'pokyunBuf');
-        load('assets/sound/bigwin.mp3?ver=202610150356', 'bigwinBuf');
-        load('assets/sound/seven_stop.mp3?ver=202610150356', 'sevenStopBuf');
-        load('assets/sound/seven_align.mp3?ver=202610150356', 'sevenAlignBuf');
-        load('assets/sound/bonusin_snd.mp3?ver=202610150356', 'bonusinBuf');
-        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610150356', 'bonusBuf'), 300);
-        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610150356', 'barBgmBuf'), 400);
+        load('assets/sound/ooi.mp3?ver=202610171554', 'ooiBuf');
+        load('assets/sound/aishiteru.mp3?ver=202610171554', 'aiBuf');
+        load('assets/sound/pokyun.mp3?ver=202610171554', 'pokyunBuf');
+        load('assets/sound/bigwin.mp3?ver=202610171554', 'bigwinBuf');
+        load('assets/sound/seven_stop.mp3?ver=202610171554', 'sevenStopBuf');
+        load('assets/sound/seven_align.mp3?ver=202610171554', 'sevenAlignBuf');
+        load('assets/sound/bonusin_snd.mp3?ver=202610171554', 'bonusinBuf');
+        setTimeout(() => load('assets/sound/bonus_bgm.mp3?ver=202610171554', 'bonusBuf'), 300);
+        setTimeout(() => load('assets/sound/bar_bgm.mp3?ver=202610171554', 'barBgmBuf'), 400);
       }catch(e){}
     },
     tone(freq, at=0, dur=.1, {type='square', vol=.08, to=null, vib=0}={}){
@@ -881,50 +881,50 @@
 
   // 通常ステージのキャラクター（添付画像。背景を透過して埋め込み）
   const HERO = new Image();
-  HERO.src = 'assets/img/haishin.webp?ver=202610150356';
+  HERO.src = 'assets/img/haishin.webp?ver=202610171554';
 
   // ボーナス（AT）中のキャラクター（2枚目の添付画像）
   const HEROINE = new Image();
-  HEROINE.src = 'assets/img/bonus.webp?ver=202610150356';
+  HEROINE.src = 'assets/img/bonus.webp?ver=202610171554';
 
   // 擬似連で登場するおじいちゃん（添付画像）
   const OJII = new Image();
-  OJII.src = 'assets/img/ojii.webp?ver=202610150356';
+  OJII.src = 'assets/img/ojii.webp?ver=202610171554';
   // 激アツ全画面演出のキャラクター
   const TUX = new Image();
-  TUX.src = 'assets/img/gekiatsu.webp?ver=202610150356';
+  TUX.src = 'assets/img/gekiatsu.webp?ver=202610171554';
 
   // チャンスステージの背景（東京の夜景）とキャラクター（16ポーズのスプライト。1マス200px、4×4）
   const CZ_BG = new Image();
-  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610150356';
+  CZ_BG.src = 'assets/img/chance_bg.webp?ver=202610171554';
   const CZ_SPRITES = new Image();
-  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610150356';
+  CZ_SPRITES.src = 'assets/img/chance_chara.webp?ver=202610171554';
 
   // 通常ステージのキャラ：ポーズ集A（ステージ1・2）とB（ステージ3）。1マス200px、4×4
   const ST_A = new Image();
-  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610150356';
+  ST_A.src = 'assets/img/stage12_chara.webp?ver=202610171554';
   // バトルの相手：1行目 黒服（拳銃）、2行目 MCギフト（各6ポーズ：待機・攻撃・ダメージ・ピンチ・敗北・勝ち誇り）、
   // 3行目 S6ライバー6人（通常）、4行目 同（KO）
   const ENEMY_SPRITES = new Image();
-  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610150356';
+  ENEMY_SPRITES.src = 'assets/img/battle_chara.webp?ver=202610171554';
   // 777ボーナス（7揃いのAT）のステージ：背景「Machida Universe」と覚醒町田さん（5×5＝25ポーズ）
   const UNIV_BG = new Image();
-  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610150356';
+  UNIV_BG.src = 'assets/img/bonus777_bg.webp?ver=202610171554';
   const MACHIDA = new Image();
-  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610150356';
+  MACHIDA.src = 'assets/img/bonus777_chara.webp?ver=202610171554';
   // 777ボーナス中の液晶背景：ループ動画（640×320・約40秒・無音。曲はボーナスBGMのまま）
   const ATV = document.createElement('video');
   ATV.muted = true; ATV.loop = true; ATV.playsInline = true; ATV.setAttribute('playsinline', ''); ATV.setAttribute('muted', ''); ATV.preload = 'auto';
-  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610150356';
-  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610150356';
-  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610150356';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
+  const ATV_MP4 = 'assets/video/bonus777.mp4?ver=202610171554';
+  const ATV_WEBM = 'assets/video/bonus777.webm?ver=202610171554';
+  const ATV_HD = 'assets/video/bonus777_hd.mp4?ver=202610171554';   // 高画質版（公開版のみ assets/video/bonus777_hd.mp4）
   const atvReady = () => ATV.readyState >= 2 && ATV.videoWidth > 0;
   // ボーナス図柄が揃ったあとの全画面演出（縦長の動画・約8秒）。音声は別の音源で動画と同時に鳴らす
   const BV = document.createElement('video');
   BV.muted = true; BV.playsInline = true; BV.setAttribute('playsinline', ''); BV.setAttribute('muted', ''); BV.preload = 'auto';
-  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610150356';
-  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610150356';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
-  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610150356';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
+  const BV_MP4 = 'assets/video/bonusin.mp4?ver=202610171554';
+  const BV_WEBM = 'assets/video/bonusin.webm?ver=202610171554';   // 公開版では assets/video/bonusin.webm（H.264が使えないブラウザ用）
+  const BV_HD = 'assets/video/bonusin_hd.mp4?ver=202610171554';    // 高画質版（公開版のみ assets/video/bonusin_hd.mp4）
   // 動画の画質：標準／高画質（設定欄で切り替え）。H.264が使えないブラウザはWebM（標準画質）
   const videoQ = () => { try { return JSON.parse(localStorage.getItem('slot.vq')) || 'sd'; } catch(e){ return 'sd'; } };
   const canMp4 = BV.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '';
@@ -940,12 +940,12 @@
   const bvReady = () => BV.readyState >= 2 && BV.videoWidth > 0;
   // 777確定の全画面演出に使うイラスト（縦長）
   const K777 = new Image();
-  K777.src = 'assets/img/kakutei777.webp?ver=202610150356';
+  K777.src = 'assets/img/kakutei777.webp?ver=202610171554';
   // 実家ステージ（ステージ4）の背景
   const JIKKA_BG = new Image();
-  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610150356';
+  JIKKA_BG.src = 'assets/img/stage4_bg.webp?ver=202610171554';
   const ST_B = new Image();
-  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610150356';
+  ST_B.src = 'assets/img/stage3_chara.webp?ver=202610171554';
 
   const screen = (() => {
     const cv = $('screen'), g = cv.getContext('2d');
@@ -1265,7 +1265,7 @@
     // --- 擬似連のおじいちゃん：段が進むたびに大きくなって「おーーい！」 ---
     const easeBack = x => 1 + 2.7*Math.pow(x-1,3) + 1.7*Math.pow(x-1,2);
     function drawOjii(t){
-      if(!S.gisi || !(OJII.complete && OJII.naturalWidth)) return;
+      if(!S.gisi || !(OJII.complete && OJII.naturalWidth || M3D.models.ojii)) return;
       const e = t - S.gisiT, stay = S.gisi === 5 ? 2600 : 1700;
       if(e > stay + 400) return;
       const sizeOf = n => n ? 50 + (n - 1)*10 : 0;               // ①50 → ⑤90（擬似連の文字の邪魔にならない大きさ）
@@ -1276,8 +1276,11 @@
       const leave = e > stay ? (e - stay)/400 : 0;             // 最後の段のあとで下に引っ込む
       const w = h * OJII.naturalWidth / OJII.naturalHeight;
       const x = 284 + Math.sin(t/90)*(e < 900 ? 1.5 : 0), bottom = 164 + leave*h;
-      g.save(); g.translate(x, bottom); g.rotate(Math.sin(t/300)*.04);
-      g.drawImage(OJII, -w/2, -h, w, h); g.restore();
+      // 3Dのおじいさん（段が上がるほど気合いが入る）。読み込み前はイラスト
+      if(!m3dDraw('ojii', t, {anim: S.gisi >= 4 ? 'angry_03' : S.gisi >= 2 ? 'clap' : 'fold_arms', x, bottom, h: h*1.05, rot: -.35, shadow: false})){
+        g.save(); g.translate(x, bottom); g.rotate(Math.sin(t/300)*.04);
+        g.drawImage(OJII, -w/2, -h, w, h); g.restore();
+      }
       // 段が変わるたびに小さな吹き出し（擬似連の文字より上、右側）
       if(e > 120 && e < 1000){
         const bk = Math.min(1, (e - 120)/140), sc = .5 + .5*bk;
@@ -1702,7 +1705,8 @@
       g.fillStyle = 'rgba(60,0,10,.6)'; g.fillRect(0, 140, W, 20);
       g.fillStyle = '#F2C14E'; g.fillRect(0, 140, W, 2);
       // おじいちゃん：ガッツポーズで弾む
-      if(OJII.complete && OJII.naturalWidth){
+      if(m3dDraw('ojii', t, {anim: Math.floor(t/5000) % 2 ? 'dance_05' : 'clap', x: W/2, bottom: 160, h: 80, rot: Math.sin(t/2600)*.3, glow: 'rgba(255,240,180,.9)'})){}
+      else if(OJII.complete && OJII.naturalWidth){
         const h = 86, w = h * OJII.naturalWidth / OJII.naturalHeight;
         const hop = Math.abs(Math.sin(t/180))*5, rot = Math.sin(t/360)*.06;
         g.save(); g.translate(W/2, 158 - hop); g.rotate(rot);
@@ -1804,7 +1808,7 @@
         g.font = 'bold 8px "M PLUS 1p", sans-serif'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
         g.textAlign = right ? 'right' : 'left'; g.fillText(name, right ? x + w : x, 42);
       };
-      bar(8, 138, S.bhpView[0], 'コウジ', false);
+      bar(8, 138, S.bhpView[0], HERO_NAME[battleHero(S.bt.type)] || 'コウジ', false);
       bar(174, 138, S.bhpView[1], foeName, true);
     }
     // イベント：ランキングボード
@@ -1851,7 +1855,7 @@
           if(A.type === 'hero'){ hx += lunge*60; hp = HERO_POSE.dash; txt = `${A.dmg}人撃破！`; if(ae > 400) b.aliveView = A.snap.alive; }
           else { hp = HERO_POSE.damage; shakeH = hit ? 4 : 0; txt = 'キャー！囲まれた！'; }
         } else {   // 通常バトル（黒服・拳銃）
-          if(A.type === 'hero'){ hx += lunge*70; hp = HERO_POSE.attack; if(hit){ fp = 'damage'; shakeF = 4; flashF = ae < 380; overlay = Math.max(0, 1 - (ae-300)/250); } txt = 'コウジの攻撃！'; }
+          if(A.type === 'hero'){ hx += lunge*70; hp = HERO_POSE.attack; if(hit){ fp = 'damage'; shakeF = 4; flashF = ae < 380; overlay = Math.max(0, 1 - (ae-300)/250); } txt = `${HERO_NAME[battleHero(type)]}の攻撃！`; }
           else { fp = 'attack'; if(hit){ hp = HERO_POSE.damage; shakeH = 4; } txt = '黒服の銃撃！';
             if(ae > 250 && ae < 700){ sparkle(fx - 62, 108, 14, '#FFE14D'); bText('BANG!', 92, 14, '#FF2D2D', '#000', fx - 80); } }
         }
@@ -2336,7 +2340,7 @@
 
     // --- 3Dキャラ（町田さん・コウジ・ハゲ彼氏・シロヤナギくん）---
     // three.js で別のキャンバスに描いて液晶に貼る。読み込みが終わるまで（またはネットにつながらないとき）は今までの2Dの絵で代用
-    const M3D_SRC = {machida:'assets/model/machida.glb?ver=202610150356', koji:'assets/model/koji.glb?ver=202610150356', hage:'assets/model/hage.glb?ver=202610150356', shiro:'assets/model/shiro.glb?ver=202610150356', live:'assets/model/live.glb?ver=202610150356'};   // プレビュー用：base64文字列のファイル（公開版はGLBファイルに差し替え）
+    const M3D_SRC = {machida:'assets/model/machida.glb?ver=202610171554', koji:'assets/model/koji.glb?ver=202610171554', hage:'assets/model/hage.glb?ver=202610171554', shiro:'assets/model/shiro.glb?ver=202610171554', live:'assets/model/live.glb?ver=202610171554', ojii:'assets/model/ojii.glb?ver=202610171554'};   // プレビュー用：base64文字列のファイル（公開版はGLBファイルに差し替え）
     const M3D = {st:'none', models:{}, loading:{}};
     function m3dInit(){
       if(M3D.st !== 'none') return; M3D.st = 'loading';
@@ -2385,7 +2389,7 @@
     }
     // 少し待ってから先読み（よく使う順）
     setTimeout(() => m3dInit(), 2000);
-    [['koji', 3000], ['machida', 4500], ['hage', 6000], ['shiro', 7500], ['live', 9000]].forEach(([n, ms]) => setTimeout(() => { if(M3D.st === 'ready') m3dModel(n); else setTimeout(() => m3dModel(n), 3000); }, ms));
+    [['koji', 3000], ['machida', 4500], ['hage', 6000], ['shiro', 7500], ['live', 9000], ['ojii', 10500]].forEach(([n, ms]) => setTimeout(() => { if(M3D.st === 'ready') m3dModel(n); else setTimeout(() => m3dModel(n), 3000); }, ms));
     const m3dHas = (name, clip) => !!(M3D.models[name] && M3D.models[name].acts[clip]);
     // 動きの切り替え（なめらかにつなぐ）。names は候補の配列（入っている最初の動きを使う）。once:true は最後のポーズで止める
     function m3dPlay(m, names, once = false){
@@ -2471,8 +2475,11 @@
     // HERO_POSE の番号 → 動き（9:構え 4:攻撃 10:ダメージ 7:ピンチ 12:負け 2:勝ち 14:突撃 8:マイク）
     const HERO_3D = {
       koji:   {9:'idle', 4:['box_01', 'front_kick_01', 'box_02', 'front_kick_02', 'box_03'], 10:'wait', 7:'wait', 12:'wait', 2:'dance_05', 14:'run', 8:'swagger'},
-      machida:{9:'fold_arms', 4:['box_01', 'box_02', 'box_03', 'angry_01'], 10:'scared_01', 7:'scared_01', 12:'defeat_03', 2:'dance_04', 14:'run', 8:'sing_01'}
+      machida:{9:'fold_arms', 4:['box_01', 'box_02', 'box_03', 'angry_01'], 10:'scared_01', 7:'scared_01', 12:'defeat_03', 2:'dance_04', 14:'run', 8:'sing_01'},
+      ojii:   {9:'fold_arms', 4:['box_01', 'front_kick_01', 'box_02', 'front_kick_02', 'box_03'], 10:'angry_03', 7:'angry_03', 12:'defeat_02', 2:'dance_05', 14:'box_01', 8:'clap'}
     };
+    const HERO_NAME = {koji:'コウジ', ojii:'おじいさん', machida:'町田さん'};
+    const battleHero = type => type === 's6' ? 'machida' : (S.bt && S.bt.hero) || 'koji';
     const FOE_3D = {gun:'hage', rap:'shiro'};
     const FOE_ANIM = {
       hage: {idle:'agree', attack:['box_01', 'front_kick_01', 'box_02', 'front_kick_02', 'box_03'], damage:'angry_03', pinch:'angry_03', win:'cheer', defeat:'angry_03'},
@@ -2481,12 +2488,12 @@
     const pickAnim = (name, a, seed) => { if(!Array.isArray(a)) return a; const ok = a.filter(c => m3dHas(name, c)); return ok.length ? ok[seed % ok.length] : a; };
     // fall：0〜1（倒れる途中）。1で横に倒れたまま
     function heroDraw3d(t, type, pose, x, bottom, h, walking, seed, fall){
-      const name = type === 's6' ? 'machida' : 'koji';
-      if(name === 'machida' && !m3dModel(name)) return false;
-      const anim = walking ? 'walk' : pickAnim(name, HERO_3D[name][pose] || 'idle', seed);
-      const usesFall = pose === 12 && !m3dHas(name, 'defeat_03');
+      const name = battleHero(type);
+      if(name !== 'koji' && !m3dModel(name)) return false;
+      const anim = walking ? (m3dHas(name, 'walk') ? 'walk' : 'fold_arms') : pickAnim(name, HERO_3D[name][pose] || 'idle', seed);
+      const usesFall = pose === 12 && !m3dHas(name, 'defeat_03') && !m3dHas(name, 'defeat_02');
       const tilt = usesFall ? fall*1.35 : pose === 10 ? .22 : pose === 7 ? .08 : 0;
-      return m3dDraw(name, t, {anim, once: anim === 'defeat_03', x, bottom, h:h*1.12, rot:Math.PI*.3, tilt, tiltSpeed: usesFall ? 4 : 10, glow: pose === 4 && name === 'machida' ? 'rgba(255,140,40,.8)' : null});
+      return m3dDraw(name, t, {anim, once: anim === 'defeat_03' || anim === 'defeat_02', x, bottom, h:h*1.12, rot:Math.PI*.3, tilt, tiltSpeed: usesFall ? 4 : 10, glow: pose === 4 && name === 'machida' ? 'rgba(255,140,40,.8)' : null});
     }
     function foeDraw3d(t, type, pose, x, bottom, h, seed, fall){
       const name = FOE_3D[type]; if(!name) return false;
@@ -2497,10 +2504,10 @@
     }
 
     // ---- ボーナス（777）：ステージの背景に、町田さんがセンターで歌って踊り、みんながバックで踊る ----
-    const STAGE777 = new Image(); STAGE777.src = 'assets/img/stage777.webp?ver=202610150356';
+    const STAGE777 = new Image(); STAGE777.src = 'assets/img/stage777.webp?ver=202610171554';
     // 777ボーナス（動画版）：画面の右側に、ちびキャラが1人ずつ交代で出てきて踊る
     const GUESTS = ['koji', 'shiro', 'hage', 'ojii'], GUEST_STAY = 8000;
-    const GUEST_ANIM = {koji:['dance_05', 'swagger'], shiro:['dance_05', 'swagger'], hage:['clap', 'dance_05', 'cheer']};
+    const GUEST_ANIM = {koji:['dance_05', 'swagger'], shiro:['dance_05', 'swagger'], hage:['clap', 'dance_05', 'cheer'], ojii:['dance_05', 'clap']};
     function drawVideoGuest(t){
       if(S.guestFor !== S.at){ S.guestFor = S.at; S.guestT0 = t; S.guestOff = Math.floor(Math.random()*GUESTS.length); }
       const e = t - S.guestT0, slot = Math.floor(e/GUEST_STAY), le = e - slot*GUEST_STAY;
@@ -2510,7 +2517,7 @@
       const pop = easeBack(kin) * (1 - kout), x = 283, bottom = 150 + (1 - kin)*20 + kout*30, h = 62;
       if(pop <= .02) return;
       const gained = S.atAddT && t - S.atAddT < 2600;
-      if(name === 'ojii'){
+      if(name === 'ojii' && !m3dModel('ojii')){
         if(!(OJII.complete && OJII.naturalWidth)) return;
         const hh = h*1.05*pop, w = hh*OJII.naturalWidth/OJII.naturalHeight, hop = Math.abs(Math.sin(t/(gained ? 140 : 260)))*(gained ? 7 : 3);
         g.save(); g.globalAlpha = .3; g.fillStyle = '#000'; g.beginPath(); g.ellipse(x, bottom - 1, hh*.2, hh*.04, 0, 0, Math.PI*2); g.fill(); g.restore();
@@ -2546,13 +2553,15 @@
       // 歌（3曲）→ダンス の順にくり返す。上乗せのときは盛り上がり（cheer）
       const LIVE_SET = ['sing_01', 'dance_01', 'sing_02', 'swagger', 'sing_03', 'dance_05'];
       const mAnim = gained ? 'cheer' : LIVE_SET[seg % LIVE_SET.length];
-      const crew = gained ? {koji:'dance_05', shiro:'dance_05', hage:'cheer'} : {
+      const crew = gained ? {koji:'dance_05', shiro:'dance_05', hage:'cheer', ojii:'dance_05'} : {
+        ojii:  ['dance_05', 'clap', 'dance_05'][seg % 3],
         koji:  ['dance_05', 'swagger', 'dance_05'][seg % 3],
         shiro: ['swagger', 'dance_05', 'dance_05'][seg % 3],
         hage:  ['clap', 'dance_05', 'cheer'][seg % 3]
       };
       const beat = Math.sin(t/1000*132/60*Math.PI);
       const ok = m3dGroup(t, [
+        {name:'ojii', anim:crew.ojii, x:-1.38, z:-.75, rot:.5, s:.84},
         {name:'hage', anim:crew.hage, x:1.42, z:-.75, rot:-.5, s:.86},
         {name:'koji', anim:crew.koji, x:-.82, z:-.35, rot:.45, s:.86},
         {name:'shiro', anim:crew.shiro, x:.8, z:-.3, rot:-.45, s:.86},
@@ -2932,9 +2941,9 @@
       preview(pv){ S.pv = pv; S.pvT = performance.now(); S.pvRevealed = false; },
       reveal(pv){ S.rv = pv; S.rvT = performance.now(); S.pvRevealed = true; sfx.reveal(); },
       gisiFail(){ S.gfT = performance.now(); sfx.battleLose(); },
-      battleStart(b, dev){ S.bDev = !!dev; S.bt = {...b, hp:b.hp.slice()}; S.bhpView = [100,100]; S.bAct = {type:'intro', t0:performance.now()}; S.bT = performance.now();
+      battleStart(b, dev){ S.bDev = !!dev; S.bt = {...b, hp:b.hp.slice(), hero: b.type === 'gun' && Math.random() < .5 ? 'ojii' : 'koji'}; S.bhpView = [100,100]; S.bAct = {type:'intro', t0:performance.now()}; S.bT = performance.now();
         comment(`${BATTLES[b.type].name}が始まった！`, pick(VIEWERS)); },
-      battleRestore(b){ S.bt = {...b, hp:b.hp.slice()}; S.bhpView = b.hp.slice(); S.bAct = null; },
+      battleRestore(b){ S.bt = {...b, hp:b.hp.slice(), hero:'koji'}; S.bhpView = b.hp.slice(); S.bAct = null; },
       battleAct(type, dmg, snap){ if(!S.bt) return; S.bAct = {type, dmg, snap, t0:performance.now()}; S.bt.game = state.battle ? state.battle.game : S.bt.game; },
       battleFinal(){ if(!S.bt) return; S.bt.game = 5; S.bAct = {type:'final', t0:performance.now()}; comment('最終決戦！', pick(VIEWERS)); },
       battleClash(){ if(S.bt) S.bAct = {type:'clash', t0:performance.now()}; },
@@ -4854,7 +4863,7 @@
   // アップデート検知：公開中のバージョン（version.json）を定期的に確認し、
   // 今開いているものより新しければリロードボタンを出す
   // ================================================================
-  const APP_VER = '202610150356';   // 書き出し時に日時（例：202610030253）へ置き換わる
+  const APP_VER = '202610171554';   // 書き出し時に日時（例：202610030253）へ置き換わる
   (function watchUpdate(){
     if(!/^\d+$/.test(APP_VER) || location.protocol === 'file:') return;   // プレビュー・ローカルでは確認しない
     let latest = null, dismissed = null;
